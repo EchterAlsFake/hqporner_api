@@ -21,7 +21,7 @@ setup(
     url="https://github.com/EchterAlsFake/hqporner_api",
     classifiers=[
         # Classifiers help users find your project on PyPI
-        "License :: LGPLv3 License",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
         "Programming Language :: Python",
     ],
 )
