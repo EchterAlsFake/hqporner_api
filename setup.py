@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="HQPorner_API",
+    name="hqporner_api",
     version="0.1",
     packages=find_packages(),
     install_requires=[
@@ -18,7 +18,7 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
     license="LGPLv3",
-    url="https://github.com/your_username/my_package",
+    url="https://github.com/EchterAlsFake/hqporner_api",
     classifiers=[
         # Classifiers help users find your project on PyPI
         "License :: LGPLv3 License",
