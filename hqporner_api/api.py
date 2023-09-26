@@ -166,6 +166,3 @@ class API:
             content = url_file.read().splitlines()
             for url in content:
                 self.download(output_path=output, quality=quality, url=url)
-
-x = API().extract_actress("https://www.youtube.com/watch?v=qWaIeAscawU&t=109s")
-print(x)
