@@ -21,20 +21,23 @@ class API:
         """
 
         :param url:
-        :return: string
+        :return: list
         """
 
         html_content = requests.get(url, headers=headers).content
         soup = BeautifulSoup(html_content, 'lxml')
+        actresses = []
         try:
             li_tag = soup.find('li', class_='icon fa-star-o')
-            a_tag = li_tag.find('a', class_='click-trigger')
+            a_tag = li_tag.find_all('a', class_='click-trigger')
+            for tag in a_tag:
+                actresses.append(tag.text)
 
         except AttributeError:
             raise NoActressFound()
 
         else:
-            return a_tag.get_text() # Todo: Support multipe actress
+             return actresses
 
     def extract_title(self, url):
         html = requests.get(url, headers=headers).content
@@ -82,7 +85,10 @@ class API:
         urls = self.get_final_urls(url)
 
         try:
-            if "360.mp4" in urls[0] and quality == "360":
+            if quality == "highest":
+                return f"https:{urls[-1]}"
+
+            elif "360.mp4" in urls[0] and quality == "360":
                 return f"https:{urls[0]}"
 
             elif "720.mp4" in urls[1] and quality == "720":
@@ -94,15 +100,11 @@ class API:
             elif "2160.mp4" in urls[3] and quality == "2160":
                 return f"https:{urls[3]}"
 
-            elif quality == "highest":
-                return f"https:{urls[-1]}"
-
             else:
                 raise QualityNotSupported()
 
         except IndexError:
             raise QualityNotSupported()
-
 
     def download(self, url, output_path, quality):
         url_download = self.get_direct_url(url, quality)
@@ -153,16 +155,29 @@ class API:
         root_url = "https://hqporner.com/actress/"
         final_url = f"{root_url}{name}"
 
-        if requests.get(final_url).status_code == 200:
-            html_content = requests.get(final_url).content
-            soup = BeautifulSoup(html_content, "lxml")  # Still in development
-
-
-        else:
-            raise ActressNotFound(name)
+        html_content = requests.get(final_url, headers=headers).content
+        soup = BeautifulSoup(html_content, "lxml")  # Still in development
+        row = soup.find_all("h3", class_="meta-data-title")
+        for item in row:
+            x = item.find("a")
+            print(x)
 
     def download_from_file(self, file, output, quality):
         with open(file, "r") as url_file:
             content = url_file.read().splitlines()
             for url in content:
                 self.download(output_path=output, quality=quality, url=url)
+
+    def get_video_length(self, url):
+        html_content = requests.get(url).content
+        soup = BeautifulSoup(html_content, "lxml")
+        li_tag = soup.find("li", class_="icon fa-clock-o")
+        return li_tag.text
+
+    def get_publish_date(self, url):
+        html_content = requests.get(url).content
+        soup = BeautifulSoup(html_content, "lxml")
+        li_tag = soup.find("li", class_="icon fa-calendar")
+        return li_tag.text
+
+
