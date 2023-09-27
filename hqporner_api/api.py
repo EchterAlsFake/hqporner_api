@@ -181,7 +181,3 @@ class API:
         return li_tag.text
 
 
-
-
-
-API().download_from_file(file="../url_file.txt",quality="highest",output="/run/media/asuna/hdd/Pornos/")
