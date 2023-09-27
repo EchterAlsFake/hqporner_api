@@ -9,6 +9,8 @@
   - [Arguments](#arguments)
   - [Get the title](#get-the-title-of-the-video)
   - [Get actress](#get-the-actress-of-the-video)
+  - [Get length](#get-the-length-of-the-video)
+  - [Get Publish date](#get-the-publish-date-of-the-video)
   - [Get direct download urls](#get-direct-download-urls)
   - [Download a video](#download-the-video)
 - [License](#license)
@@ -60,27 +62,41 @@ from hqporner_api.api import API
 ### Get the title of the video
 
 ```
-title = API.extract_title(url)
+title = API().extract_title(url)
 ```
 
 ### Get the actress of the video
 
 ```
-actress = API.extract_actress(url)
+actress = API().extract_actress(url)
 ```
 
 ### Get direct download URLs
 
 ```
-url = API.get_direct_url(url, quality) # Will return URL for given quality
+url = API().get_direct_url(url, quality) # Will return URL for given quality
 ```
 
 ### Download the video
 
 ```
-API.download(url, qualit, path) # Downloads the video with a tqdm progressbar
+API().download(url, qualit, path) # Downloads the video with a tqdm progressbar
 ```
 Note: Download speeds can be slow if the CDN Network is slow.
+
+### Get length of the video
+
+```
+API().get_length(url) # Returns video length
+```
+
+### Get publish date of the video
+
+```
+API().get_publish_date(url) # Returns the publish date as a string
+```
+
+
 
 
 # License

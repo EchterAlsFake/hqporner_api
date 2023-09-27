@@ -94,6 +94,18 @@ class API:
         else:
             raise f"Sorry, but the video doesn't support {quality}"
 
+    def get_video_length(self, url):
+        html_content = requests.get(url).content
+        soup = BeautifulSoup(html_content, "lxml")
+        li_tag = soup.find('li', class_='icon fa-clock-o')
+        return str(li_tag.text)
+
+    def get_publish_date(self, url):
+        html_content = requests.get(url).content
+        soup = BeautifulSoup(html_content, "lxml")
+        li_tag = soup.find("li", class_='icon fa-calendar')
+        return str(li_tag.text)
+
 
     def download(self, url, output_path, quality):
         url_download = self.get_direct_url(url, quality)
