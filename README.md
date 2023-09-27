@@ -52,8 +52,10 @@ from hqporner_api.api import API
     - 720 : Returns 720p quality video
     - 1080 : Returns 1080p quality video
     - 2160 : Returns 2160p quality video
+    - 'highest': Returns highest quality available (Recommended!)
 
-- Path : Where the video should be stored in
+- Path: Where the video should be stored in
+- File: Location of the file containing urls. Separated by new lines!
 
 
 
@@ -65,38 +67,52 @@ from hqporner_api.api import API
 title = API().extract_title(url)
 ```
 
-### Get the actress of the video
+### Get the actresses of the video
 
 ```
-actress = API().extract_actress(url)
+actress = API().extract_actress(url) # Returns a list of actresses (string)
 ```
 
 ### Get direct download URLs
 
 ```
-url = API().get_direct_url(url, quality) # Will return URL for given quality
+url = API().get_direct_url(url, quality) # Returns URL for given quality
 ```
 
 ### Download the video
 
 ```
-API().download(url, qualit, path) # Downloads the video with a tqdm progressbar
+API().download(url, quality, path) # Downloads the video with a tqdm progressbar
 ```
 Note: Download speeds can be slow if the CDN Network is slow.
+
+### Download from file
+
+```
+API().download(file, quality, path) # Downloads all urls from file. Separate URLs with new line
+```
+
+
 
 ### Get length of the video
 
 ```
-API().get_length(url) # Returns video length
+API().get_length(url) # Returns video length (string)
 ```
 
 ### Get publish date of the video
 
 ```
-API().get_publish_date(url) # Returns the publish date as a string
+API().get_publish_date(url) # Returns the publish date (string)
 ```
 
+### Get categories of the video
 
+```
+API().get_categories(url) # Returns a list with categories (string)
+```
+
+#### Exceptions are in exceptions.py, but they aren't really well implemented yet.
 
 
 # License
