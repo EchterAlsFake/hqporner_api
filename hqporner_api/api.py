@@ -2,7 +2,12 @@ import re
 import os
 import requests
 
-from exceptions import *
+try:
+    from exceptions import *
+
+except ModuleNotFoundError:
+    from .exceptions import *
+
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
