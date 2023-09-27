@@ -2,6 +2,7 @@ import re
 import os
 import requests
 
+from exceptions import *
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
@@ -16,7 +17,6 @@ class API:
     def check_path(self, path):
         return True if os.path.exists(path) else False
 
-
     def extract_actress(self, url):
         """
 
@@ -26,17 +26,20 @@ class API:
 
         html_content = requests.get(url, headers=headers).content
         soup = BeautifulSoup(html_content, 'lxml')
-        li_tag = soup.find('li', class_='icon fa-star-o')
-        a_tag = li_tag.find('a', class_='click-trigger')
+        try:
+            li_tag = soup.find('li', class_='icon fa-star-o')
+            a_tag = li_tag.find('a', class_='click-trigger')
 
-        return a_tag.get_text()
+        except AttributeError:
+            raise NoActressFound()
 
+        else:
+            return a_tag.get_text() # Todo: Support multipe actress
 
     def extract_title(self, url):
         html = requests.get(url, headers=headers).content
         beautifulsoup = BeautifulSoup(html, "lxml")
         return beautifulsoup.find("title").text
-
 
     def extract_text_after_double_slash(self, url):
         html = requests.get(url, headers=headers).content
@@ -47,7 +50,6 @@ class API:
         if match:
             url_path = match.group(1)
             return url_path
-
 
     def get_final_urls(self, url):
         base_url = self.extract_text_after_double_slash(url)
@@ -65,7 +67,6 @@ class API:
 
         return urls
 
-
     def get_direct_url(self, url, quality):
         """
         :param url:
@@ -74,37 +75,33 @@ class API:
             2) 720: returns 720p video url
             3) 1080: returns 1080p video url
             4) 2160: returns 2160p video url
+            5) highest: returns highest quality possible
         :return: string
         """
 
         urls = self.get_final_urls(url)
 
-        if "360.mp4" in urls[0] and quality == "360":
-            return f"http:{urls[0]}"
+        try:
+            if "360.mp4" in urls[0] and quality == "360":
+                return f"https:{urls[0]}"
 
-        elif "720.mp4" in urls[1] and quality == "720":
-            return f"http:{urls[1]}"
+            elif "720.mp4" in urls[1] and quality == "720":
+                return f"https:{urls[1]}"
 
-        elif "1080.mp4" in urls[2] and quality == "1080":
-            return f"http:{urls[2]}"
+            elif "1080.mp4" in urls[2] and quality == "1080":
+                return f"https:{urls[2]}"
 
-        elif "2160.mp4" in urls[3] and quality == "2160":
-            return f"http:{urls[3]}"
+            elif "2160.mp4" in urls[3] and quality == "2160":
+                return f"https:{urls[3]}"
 
-        else:
-            raise f"Sorry, but the video doesn't support {quality}"
+            elif quality == "highest":
+                return f"https:{urls[-1]}"
 
-    def get_video_length(self, url):
-        html_content = requests.get(url).content
-        soup = BeautifulSoup(html_content, "lxml")
-        li_tag = soup.find('li', class_='icon fa-clock-o')
-        return str(li_tag.text)
+            else:
+                raise QualityNotSupported()
 
-    def get_publish_date(self, url):
-        html_content = requests.get(url).content
-        soup = BeautifulSoup(html_content, "lxml")
-        li_tag = soup.find("li", class_='icon fa-calendar')
-        return str(li_tag.text)
+        except IndexError:
+            raise QualityNotSupported()
 
 
     def download(self, url, output_path, quality):
@@ -127,3 +124,45 @@ class API:
 
             # Close the progress bar when the download is complete
             progress_bar.close()
+
+    def get_categories(self, url):
+        html_content = requests.get(url).content
+        soup = BeautifulSoup(html_content, "lxml")
+
+        categories = []
+
+        section = soup.find_all('div', class_='box page-content')
+        for sec in section:
+            x = sec.find_all_next("a", class_="tag-link click-trigger")
+            for z in x:
+                f = z.find_next_sibling("a")
+                try:
+                    if not f.text in categories:
+                        categories.append(f.text)
+
+                except AttributeError:
+                    pass
+
+        if len(categories) == 0:
+            raise "Error: No categories were found."
+
+        else:
+            return categories
+
+    def get_videos_by_actress(self, name: str):
+        root_url = "https://hqporner.com/actress/"
+        final_url = f"{root_url}{name}"
+
+        if requests.get(final_url).status_code == 200:
+            html_content = requests.get(final_url).content
+            soup = BeautifulSoup(html_content, "lxml")  # Still in development
+
+
+        else:
+            raise ActressNotFound(name)
+
+    def download_from_file(self, file, output, quality):
+        with open(file, "r") as url_file:
+            content = url_file.read().splitlines()
+            for url in content:
+                self.download(output_path=output, quality=quality, url=url)
