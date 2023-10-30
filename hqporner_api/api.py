@@ -1,6 +1,7 @@
 import re
 import os
 import requests
+import string
 
 try:
     from exceptions import *
@@ -111,26 +112,46 @@ class API:
         except IndexError:
             raise QualityNotSupported()
 
-    def download(self, url, output_path, quality):
+
+    def strip_title(self, title):
+        illegal_chars = '<>:"/\\|?*'
+        cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
+
+        return cleaned_title
+
+    def download(self, url, output_path, quality, callback=None):
         url_download = self.get_direct_url(url, quality)
         title = self.extract_title(url)
-
-        final_path = output_path + title + ".mp4"
+        title = self.strip_title(title)
+        final_path = os.path.join(output_path, f"{title}.mp4")
         response = requests.get(url_download, stream=True)
         file_size = int(response.headers.get('content-length', 0))
-        progress_bar = tqdm(total=file_size, unit='B', unit_scale=True, desc=title)
+
+        if callback is None:
+            progress_bar = tqdm(total=file_size, unit='B', unit_scale=True, desc=title)
+
+        downloaded_so_far = 0
+
         if not os.path.exists(final_path):
-
             with open(final_path, 'wb') as file:
-                # Iterate over the content in chunks
                 for chunk in response.iter_content(chunk_size=1024):
-                    # Write the chunk to the file
                     file.write(chunk)
-                    # Update the progress bar
-                    progress_bar.update(len(chunk))
+                    downloaded_so_far += len(chunk)
 
-            # Close the progress bar when the download is complete
-            progress_bar.close()
+                    if callback:
+                        callback(downloaded_so_far, file_size)
+
+                    else:
+                        progress_bar.update(len(chunk))
+
+            if not callback:
+                progress_bar.close()
+
+    def custom_callback(self, downloaded, total):
+        """This is an example of how you can implement the custom callback"""
+
+        percentage = (downloaded / total) * 100
+        print(f"Downloaded: {downloaded} bytes / {total} bytes ({percentage:.2f}%)")
 
     def get_categories(self, url):
         html_content = requests.get(url).content
@@ -167,11 +188,11 @@ class API:
             x = item.find("a")
             print(x)
 
-    def download_from_file(self, file, output, quality):
+    def download_from_file(self, file, output, quality, callback=None):
         with open(file, "r") as url_file:
             content = url_file.read().splitlines()
             for url in content:
-                self.download(output_path=output, quality=quality, url=url)
+                self.download(output_path=output, quality=quality, url=url, callback=callback)
 
     def get_video_length(self, url):
         html_content = requests.get(url).content
