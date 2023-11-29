@@ -139,7 +139,7 @@ class API:
                     downloaded_so_far += len(chunk)
 
                     if callback:
-                        callback(downloaded_so_far, file_size)
+                        callback(downloaded_so_far, file_size, "hqporner")
 
                     else:
                         progress_bar.update(len(chunk))
