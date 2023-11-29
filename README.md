@@ -113,6 +113,13 @@ API().get_publish_date(url) # Returns the publish date (string)
 API().get_categories(url) # Returns a list with categories (string)
 ```
 
+### Get total file size
+
+
+```py
+API().get_total_size(url, quality) # Returns the file size (int)
+```
+
 #### Exceptions are in exceptions.py, but they aren't really well implemented yet.
 
 

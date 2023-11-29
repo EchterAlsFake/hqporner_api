@@ -205,3 +205,9 @@ class API:
         soup = BeautifulSoup(html_content, "lxml")
         li_tag = soup.find("li", class_="icon fa-calendar")
         return li_tag.text
+
+    def get_total_size(self, url, quality):
+        url_download = self.get_direct_url(url, quality)
+        response = requests.get(url_download, stream=True)
+        file_size = int(response.headers.get('content-length', 0))
+        return file_size
