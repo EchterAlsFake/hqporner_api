@@ -119,11 +119,16 @@ class API:
 
         return cleaned_title
 
-    def download(self, url, output_path, quality, callback=None):
+    def download(self, url, output_path, quality, callback=None, no_title=False):
         url_download = self.get_direct_url(url, quality)
         title = self.extract_title(url)
         title = self.strip_title(title)
-        final_path = os.path.join(output_path, f"{title}.mp4")
+        if no_title:
+            final_path = output_path
+
+        else:
+            final_path = os.path.join(output_path, f"{title}.mp4")
+
         response = requests.get(url_download, stream=True)
         file_size = int(response.headers.get('content-length', 0))
 
