@@ -135,7 +135,7 @@ This will return pos (current progress) and total to the custom function.
 <br>Here's an Example: 
 
 ```py
-def custom_callback(self, downloaded, total):
+def custom_callback(self, downloaded, total, identifier): # The identifier just returns "hqporner" and can be ignored!
     """This is an example of how you can implement the custom callback"""
 
     percentage = (downloaded / total) * 100
