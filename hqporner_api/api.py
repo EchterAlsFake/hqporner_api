@@ -1,16 +1,10 @@
-import re
 import os
-import requests
+import requests  # pip install requests
 import string
-
-try:
-    from exceptions import *
-
-except ModuleNotFoundError:
-    from .exceptions import *
-
-from bs4 import BeautifulSoup
-from tqdm import tqdm
+from functools import cached_property
+from enum import Enum
+from consts import *
+from tqdm import tqdm  # pip install tqdm
 
 headers = {
     "Referer": "https://hqporner.com/",
@@ -18,118 +12,94 @@ headers = {
 }  # Use this to prevent detection mechanisms...
 
 
+class Quality(Enum):
+    BEST = 'BEST'
+    HALF = 'HALF'
+    WORST = 'WORST'
+
+
 class API:
+    def __init__(self, url):
+        self.html_content = requests.get(url=url, headers=headers).content.decode("utf-8")
+        self.url = url
 
-    def check_path(self, path):
-        return True if os.path.exists(path) else False
+    @cached_property
+    def video_title(self) -> str:
+        match = PATTERN_TITLE.search(self.html_content)
+        if match:
+            title = match.group(1)
+            return title
 
-    def extract_actress(self, url):
-        """
-
-        :param url:
-        :return: list
-        """
-
-        html_content = requests.get(url, headers=headers).content
-        soup = BeautifulSoup(html_content, 'lxml')
-        actresses = []
-        try:
-            li_tag = soup.find('li', class_='icon fa-star-o')
-            a_tag = li_tag.find_all('a', class_='click-trigger')
-            for tag in a_tag:
-                actresses.append(tag.text)
-
-        except AttributeError:
-            raise NoActressFound()
-
-        else:
-             return actresses
-
-    def extract_title(self, url):
-        html = requests.get(url, headers=headers).content
-        beautifulsoup = BeautifulSoup(html, "lxml")
-        return beautifulsoup.find("title").text
-
-    def extract_text_after_double_slash(self, url):
-        html = requests.get(url, headers=headers).content
-        beautifulsoup = BeautifulSoup(html, "lxml")
-        url_pattern = re.compile(r"url: '/blocks/altplayer\.php\?i=//(.*?)',")
-        match = url_pattern.search(str(beautifulsoup))
-
+    @cached_property
+    def cdn_url(self) -> str:
+        match = PATTERN_CDN_URL.search(self.html_content)
         if match:
             url_path = match.group(1)
             return url_path
 
-    def get_final_urls(self, url):
-        base_url = self.extract_text_after_double_slash(url)
-        final_content = requests.get("https://" + base_url).content
-        soup = BeautifulSoup(final_content, "lxml")
-        for script in soup.find_all('script'):
-            if 'do_pl()' in script.text:
-                script_content = script.text
-                break
+    @cached_property
+    def pornstars(self) -> list:
+        actress_names = PATTERN_ACTRESS.findall(self.html_content)
+        return actress_names
 
-        video_urls = re.findall(r'//[^\'"]+\.mp4', script_content)
-        urls = []
-        for url in video_urls:
-            urls.append(url) if not url in urls else ""
+    @cached_property
+    def video_length(self) -> str:
+        match = PATTERN_VIDEO_LENGTH.search(self.html_content)
+        if match:
+            return match.group(1)
 
+    @cached_property
+    def publish_date(self) -> str:
+        match = PATTERN_PUBLISH_DATE.search(self.html_content)
+        if match:
+            return match.group(1)
+
+    @cached_property
+    def categories(self) -> list:
+        categories = PATTERN_CATEGORY.findall(self.html_content)
+        return categories
+
+    @cached_property
+    def video_qualities(self) -> list:
+        quals = self.direct_download_urls
+        qualities = set()  # Using a set to avoid duplicates
+
+        for url in quals:
+            match = PATTERN_RESOLUTION.search(url)
+            if match:
+                qualities.add(match.group(1))
+
+        return sorted(qualities, key=int)  # Sorting to maintain a consistent order
+
+    @cached_property
+    def direct_download_urls(self) -> list:
+        cdn_url = f"https://{self.cdn_url}"
+        html_content = requests.get(url=cdn_url, headers=headers).content.decode("utf-8")
+        urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
-    def get_direct_url(self, url, quality):
-        """
-        :param url:
-        :param quality
-            1) 360: returns 360p video url
-            2) 720: returns 720p video url
-            3) 1080: returns 1080p video url
-            4) 2160: returns 2160p video url
-            5) highest: returns highest quality possible
-        :return: string
-        """
+    def download(self, quality, output_path="./", no_title=False, callback=None):
+        cdn_urls = self.direct_download_urls
+        quals = self.video_qualities
+        quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}
 
-        urls = self.get_final_urls(url)
+        # Define the quality map
+        quality_map = {
+            Quality.BEST: max(quals, key=lambda x: int(x)),
+            Quality.HALF: sorted(quals, key=lambda x: int(x))[len(quals) // 2],
+            Quality.WORST: min(quals, key=lambda x: int(x))
+        }
 
-        try:
-            if quality == "highest":
-                return f"https:{urls[-1]}"
-
-            elif "360.mp4" in urls[0] and quality == "360":
-                return f"https:{urls[0]}"
-
-            elif "720.mp4" in urls[1] and quality == "720":
-                return f"https:{urls[1]}"
-
-            elif "1080.mp4" in urls[2] and quality == "1080":
-                return f"https:{urls[2]}"
-
-            elif "2160.mp4" in urls[3] and quality == "2160":
-                return f"https:{urls[3]}"
-
-            else:
-                raise QualityNotSupported()
-
-        except IndexError:
-            raise QualityNotSupported()
-
-
-    def strip_title(self, title):
-        illegal_chars = '<>:"/\\|?*'
-        cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
-
-        return cleaned_title
-
-    def download(self, url, output_path, quality, callback=None, no_title=False):
-        url_download = self.get_direct_url(url, quality)
-        title = self.extract_title(url)
-        title = self.strip_title(title)
+        selected_quality = quality_map[quality]
+        download_url = f"https://{quality_url_map[selected_quality]}"
+        title = self.strip_title(self.video_title)
         if no_title:
             final_path = output_path
 
         else:
             final_path = os.path.join(output_path, f"{title}.mp4")
 
-        response = requests.get(url_download, stream=True)
+        response = requests.get(download_url, stream=True)
         file_size = int(response.headers.get('content-length', 0))
 
         if callback is None:
@@ -144,7 +114,7 @@ class API:
                     downloaded_so_far += len(chunk)
 
                     if callback:
-                        callback(downloaded_so_far, file_size, "hqporner")
+                        callback(downloaded_so_far, file_size)
 
                     else:
                         progress_bar.update(len(chunk))
@@ -152,67 +122,41 @@ class API:
             if not callback:
                 progress_bar.close()
 
+    def strip_title(self, title) -> str:
+        illegal_chars = '<>:"/\\|?*'
+        cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
+        return cleaned_title
+
     def custom_callback(self, downloaded, total):
         """This is an example of how you can implement the custom callback"""
 
         percentage = (downloaded / total) * 100
         print(f"Downloaded: {downloaded} bytes / {total} bytes ({percentage:.2f}%)")
 
-    def get_categories(self, url):
-        html_content = requests.get(url).content
-        soup = BeautifulSoup(html_content, "lxml")
-
-        categories = []
-
-        section = soup.find_all('div', class_='box page-content')
-        for sec in section:
-            x = sec.find_all_next("a", class_="tag-link click-trigger")
-            for z in x:
-                f = z.find_next_sibling("a")
-                try:
-                    if not f.text in categories:
-                        categories.append(f.text)
-
-                except AttributeError:
-                    pass
-
-        if len(categories) == 0:
-            raise "Error: No categories were found."
-
-        else:
-            return categories
-
     def get_videos_by_actress(self, name: str):
-        root_url = "https://hqporner.com/actress/"
-        final_url = f"{root_url}{name}"
+        pages = 0
+        # Brute force total pages
 
-        html_content = requests.get(final_url, headers=headers).content
-        soup = BeautifulSoup(html_content, "lxml")  # Still in development
-        row = soup.find_all("h3", class_="meta-data-title")
-        for item in row:
-            x = item.find("a")
-            print(x)
+        while True:
+            response = requests.get(f"https://hqporner.com/actress/{name}/{pages}").content.decode("utf-8")
+            match = PATTERN_CANT_FIND.search(response)
+            if "Sorry" in match.group(1).strip():
+                break
 
-    def download_from_file(self, file, output, quality, callback=None):
-        with open(file, "r") as url_file:
-            content = url_file.read().splitlines()
-            for url in content:
-                self.download(output_path=output, quality=quality, url=url, callback=callback)
+            else:
+                pages += 1
 
-    def get_video_length(self, url):
-        html_content = requests.get(url).content
-        soup = BeautifulSoup(html_content, "lxml")
-        li_tag = soup.find("li", class_="icon fa-clock-o")
-        return li_tag.text
+        for page in range(pages):
+            root_url = "https://hqporner.com/actress/"
+            if page == 0:
+                final_url = f"{root_url}{name}"
 
-    def get_publish_date(self, url):
-        html_content = requests.get(url).content
-        soup = BeautifulSoup(html_content, "lxml")
-        li_tag = soup.find("li", class_="icon fa-calendar")
-        return li_tag.text
+            else:
+                final_url = f"{root_url}{name}/{page}"
 
-    def get_total_size(self, url, quality):
-        url_download = self.get_direct_url(url, quality)
-        response = requests.get(url_download, stream=True)
-        file_size = int(response.headers.get('content-length', 0))
-        return file_size
+            html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
+            urls_ = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+            for url_ in urls_:
+                url = f"https://hqporner.com/hdporn/{url_}"
+                if PATTERN_CHECK_URL.match(url):
+                    yield API(url)
