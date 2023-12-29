@@ -2,17 +2,17 @@ from setuptools import setup, find_packages
 
 setup(
     name="hqporner_api",
-    version="0.8",
+    version="0.9",
     packages=find_packages(),
     install_requires=[
-        "tqdm", "requests", "bs4", "lxml"
+        "tqdm", "requests"
     ],
     entry_points={
         'console_scripts': [
             # If you want to create any executable scripts
         ],
     },
-    author="EchterAlsFake | Johannes Habel",
+    author="Johannes Habel",
     author_email="EchterAlsFake@proton.me",
     description="A Python API for the Porn Site HQPorner.com",
     long_description=open('README.md').read(),

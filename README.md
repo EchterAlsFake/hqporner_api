@@ -12,7 +12,7 @@ It is optimized for performance and as lightweight as possible.
 
 # Quickstart
 
-### Have a look at the [Documentation]() for more details
+### Have a look at the [Documentation](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/DOCUMENTATION.md) for more details
 
 - Install the library with `pip install hqporner_api`
 
@@ -21,9 +21,9 @@ It is optimized for performance and as lightweight as possible.
 from hqporner_api.api import API, Quality
 
 # Fetch a video
-video_object = API("INSER_HQPORNER_URL")
+video_object = API("INSERT_HQPORNER_URL")
 
-# Downlod the video
+# Download the video
 
 video_object.download(quality=Quality.BEST, output_path="your_output_path")
 
@@ -35,7 +35,7 @@ for video in actress_generator:
 ```
 
 # Changelog
-See [Changelog]() for more details.
+See [Changelog](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/CHANGELOG.md) for more details.
 
 # Contribution
 Do you see any issues or having some feature requests? Simply open an Issue or talk
