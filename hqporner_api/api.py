@@ -215,10 +215,3 @@ class Client:
                     urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
                     for url in urls:
                         yield Video(f"{root_url}/hdporn/{url}")
-
-
-videos = Client().search_videos("Mia Khalifa")
-for video in videos:
-    print(video.video_title)
-
-
