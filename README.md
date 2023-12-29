@@ -18,10 +18,12 @@ It is optimized for performance and as lightweight as possible.
 
 
 ```python
-from hqporner_api.api import API, Quality
+from hqporner_api.api import Client, Quality
+# Initialize a Client object
+client = Client()
 
 # Fetch a video
-video_object = API("INSERT_HQPORNER_URL")
+video_object = client.get_video("<insert_url_here>")
 
 # Download the video
 
@@ -29,9 +31,16 @@ video_object.download(quality=Quality.BEST, output_path="your_output_path")
 
 # Videos by actress
 
-actress_generator = video_object.get_videos_by_actress("anissa-kate")
+actress_generator = client.get_videos_by_actress("anissa-kate")
 for video in actress_generator:
     print(video.video_title) # etc...
+
+# Search for videos
+videos = client.search_videos(query="Your query here")
+for video in videos:
+    print(video.video_title)
+
+# SEE DOCUMENTATION FOR MORE
 ```
 
 # Changelog

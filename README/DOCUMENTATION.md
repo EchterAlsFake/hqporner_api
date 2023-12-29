@@ -1,8 +1,20 @@
 # HQPorner API Documentation
 
-### Current Version 0.9
+### Current Version 1.0
 
+## Table of Contents
 
+- [Installation](#installation)
+- [Dependencies](#dependencies)
+- [Usage](#usage)
+- [Quality](#quality)
+- [Client](#client)
+- [Video](#basic-video-information)
+- [Videos by Actress](#get-videos-by-actress)
+- [Videos by Category](#get-videos-by-category)
+- [Search for Videos](#search-for-videos)
+- [Additional Arguments](#additional-arguments)
+- [Exceptions](#exceptions)
 # Installation
 ````
 Installation using pip:
@@ -26,7 +38,8 @@ HQPorner API depends on the following libraries:
 Import HQPorner API like in the example below:
 
 ```python
-from hqporner_api.api import API, Quality
+from hqporner_api.api import Client, Quality, Video
+from hqporner_api.exceptions import InvalidCategory, NoVideosFound, InvalidActress
 ```
 
 # Quality
@@ -37,12 +50,18 @@ The quality class is used for video downloading. It has three methods:
 - Quality.HALF (representing something in the middle)
 - Quality.WORST (worst quality)
 
-# API
-
-### Fetch Information:
+# Client
+### Initialize a Client
 
 ```python
-api = API("hqporner url ending in .html")
+client = Client()
+```
+
+### Get a video object
+
+```python
+from hqporner_api.api import Client
+video = Client().get_video(url="<video_url>")
 ```
 
 ### Cached Objects
@@ -52,60 +71,61 @@ aren't reloaded. Instead, they are cached. This makes it very efficient.
 
 The objects are:
 
-- API().video_title
-- API().cdn_url
-- API().pornstars
-- API().video_length
-- API().publish_date
-- API().categories
-- API().video_qualities
-- API().direct_download_urls
+- Video().video_title
+- Video().cdn_url
+- Video().pornstars
+- Video().video_length
+- Video().publish_date
+- Video().categories
+- Video().video_qualities
+- Video().direct_download_urls
 
 ## Basic Video Information:
 
 ```python
-from hqporner_api.api import API
-api = API("YOUR_URL_HERE")
+from hqporner_api.api import Client
+video = Client().get_video("<video_url>")
 
 # access video title:
-api.video_title # Returns a string
+video.video_title # Returns a string
 
 # access the content delivery network url:
-api.cdn_url # Returns a string
+video.cdn_url # Returns a string
 
 # access pornstars
-api.pornstars # Returns a list
+video.pornstars # Returns a list
 
 # access video length
-api.video_length # Returns a string
+video.video_length # Returns a string
 
 # access publish date
-api.publish_date # Returns a string
+video.publish_date # Returns a string
 
 # access categories
-api.categories # Returns a list
+video.categories # Returns a list
 
 # access qualities
-api.video_qualities # Returns a list
+video.video_qualities # Returns a list
 
 # access direct download urls (for all qualities)
-api.direct_download_urls
+video.direct_download_urls
 ```
 
 ## Download a video
 
 
 ```python
-from hqporner_api.api import API, Quality
-api = API("YOUR_VIDEO_URL")
+from hqporner_api.api import Client, Quality
+client = Client()
+video = client.get_video("<video_url>")
 quality = Quality.BEST # Best quality as an example
 
-api.download(quality=quality)
+video.download(quality=quality)
 
 # by default all videos are downloaded to the current working directory.
 # You can change this by specifying an output path:
 
-api.download(quality=quality, output_path="your_path_here")
+video.download(quality=quality, output_path="your_path_here")
 
 # Custom Callback
 
@@ -122,12 +142,8 @@ def custom_callback(self, downloaded, total):
 ## Get videos by actress
 
 ```python
-from hqporner_api.api import API
-actress_object = API("YOUR_URL_HERE").get_videos_by_actress("<actress_name>") # This will be improved later, but for now you need to still give a video url.
-
-# IMPORTANT! 
-# The actress name must be the name appearing in the URL. Example: https://hqporner.com/actress/anissa-kate
-# The actress name would be anissa-kate NOT Anissa Kate
+from hqporner_api.api import Client
+actress_object = Client().get_videos_by_actress("<actress-name>")
 
 # You can now iterate through all videos from an actress:
 
@@ -137,6 +153,40 @@ for video in actress_object:
 # This will include ALL videos. Not only from the first page.
 ```
 
+## Get videos by category
+
+```python
+from hqporner_api.api import Client
+videos = Client().get_videos_by_category("<category-name>")
+
+for video in videos:
+    print(video.video_title)
+```
+
+## Search for videos
+
+```python
+from hqporner_api.api import Client
+videos = Client().search_videos(query="Search Query")
+
+for video in videos:
+    print(video.video_title)
+```
+
+
+# Additional Arguments:
+
+Some methods have a `pages` argument. This argument defines over how many pages the script iterates on HQPorner.
+For example the Pornstar Anissa Kate has currently over 162 videos. If you scroll down, you can see that
+those are packed in 4 pages. If no more pages are left, the generator will simply stop and everything's fine.
+
+# Exceptions
+
+There are 3 exceptions:
+
+- InvalidCategory  (Raised when a category is invalid)
+- NoVideosFound    (Raised when no videos were found during a search)
+- InvalidActress   (Raised when an invalid actress was given)
 
 
 

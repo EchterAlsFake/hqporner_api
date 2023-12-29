@@ -5,6 +5,11 @@ from functools import cached_property
 from enum import Enum
 from consts import *
 from tqdm import tqdm  # pip install tqdm
+try:
+    from .exceptions import *
+
+except ModuleNotFoundError:
+    from exceptions import  *
 
 headers = {
     "Referer": "https://hqporner.com/",
@@ -18,10 +23,26 @@ class Quality(Enum):
     WORST = 'WORST'
 
 
-class API:
+class Callback:
+
+    def custom_callback(self, downloaded, total):
+        """This is an example of how you can implement the custom callback"""
+
+        percentage = (downloaded / total) * 100
+        print(f"Downloaded: {downloaded} bytes / {total} bytes ({percentage:.2f}%)")
+
+    def text_progress_bar(self, downloaded, total):
+        bar_length = 50
+        filled_length = int(round(bar_length * downloaded / float(total)))
+        percents = round(100.0 * downloaded / float(total), 1)
+        bar = '#' * filled_length + '-' * (bar_length - filled_length)
+        print(f"\r[{bar}] {percents}%", end='')
+
+
+class Video:
     def __init__(self, url):
-        self.html_content = requests.get(url=url, headers=headers).content.decode("utf-8")
         self.url = url
+        self.html_content = requests.get(url=self.url, headers=headers).content.decode("utf-8")
 
     @cached_property
     def video_title(self) -> str:
@@ -127,36 +148,74 @@ class API:
         cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
         return cleaned_title
 
-    def custom_callback(self, downloaded, total):
-        """This is an example of how you can implement the custom callback"""
 
-        percentage = (downloaded / total) * 100
-        print(f"Downloaded: {downloaded} bytes / {total} bytes ({percentage:.2f}%)")
+class Client:
 
-    def get_videos_by_actress(self, name: str):
-        pages = 0
-        # Brute force total pages
+    def get_video(self, url):
+        return Video(url)
 
-        while True:
-            response = requests.get(f"https://hqporner.com/actress/{name}/{pages}").content.decode("utf-8")
-            match = PATTERN_CANT_FIND.search(response)
-            if "Sorry" in match.group(1).strip():
+    def get_videos_by_actress(self, name: str, pages=5):
+        name = name.replace(" ", "-")
+
+        response = requests.get(f"https://hqporner.com/actress/{name}").content.decode("utf-8")
+        match = PATTERN_CANT_FIND.search(response)
+        if "Sorry" in match.group(1).strip():
+            raise InvalidActress
+
+        for page in range(1, int(pages + 1)):
+            final_url = f"{root_url}{name}/{page}"
+            html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
+            match = PATTERN_CANT_FIND.search(html_content)
+            if match.group(1).strip():
                 break
 
-            else:
-                pages += 1
-
-        for page in range(pages):
-            root_url = "https://hqporner.com/actress/"
-            if page == 0:
-                final_url = f"{root_url}{name}"
-
-            else:
-                final_url = f"{root_url}{name}/{page}"
-
-            html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
             urls_ = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
             for url_ in urls_:
-                url = f"https://hqporner.com/hdporn/{url_}"
+                url = f"{root_url}/hdporn/{url_}"
                 if PATTERN_CHECK_URL.match(url):
-                    yield API(url)
+                    yield Video(url)
+
+    def get_videos_by_category(self, name: str, pages=5):
+        name = name.replace(" ", "-")
+        html_content = requests.get(url=f"{root_url_category}{name}").content.decode("utf-8")
+        match = PATTERN_CANT_FIND.search(html_content)
+        if "Sorry" in match.group(1).strip():
+            raise InvalidCategory
+
+        else:
+            for page in range(1, int(pages + 1)):
+                html_content = requests.get(url=f"{root_url_category}{name}/{page}").content.decode("utf-8")
+                match = PATTERN_CANT_FIND.search(html_content)
+                if "Sorry" in match.group(1).strip():
+                    break
+
+                else:
+                    urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                    for url in urls:
+                        yield Video(f"{root_url}/hdporn/{url}")
+
+    def search_videos(self, query: str, pages=5):
+        query = query.replace(" ", "+")
+        html_content = requests.get(url=f"{root_url}/?q={query}").content.decode("utf-8")
+        match = PATTERN_CANT_FIND.search(html_content)
+        if "Sorry" in match.group(1).strip():
+            raise NoVideosFound
+
+        else:
+            for page in range(1, int(pages + 1)):
+                html_content = requests.get(url=f"{root_url}/?q={query}&p={page}").content.decode("utf-8")
+                match = PATTERN_CANT_FIND.search(html_content)
+                if "Sorry" in match.group(1).strip():
+                    break
+
+                else:
+                    urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                    for url in urls:
+                        yield Video(f"{root_url}/hdporn/{url}")
+
+
+videos = Client().search_videos("Mia Khalifa")
+for video in videos:
+    print(video.video_title)
+
+

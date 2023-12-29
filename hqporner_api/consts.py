@@ -11,3 +11,7 @@ PATTERN_CANT_FIND = re.compile(r'<p style="padding-bottom: 20px;">(.*?)</p>', re
 PATTERN_CHECK_URL = re.compile(r"https://hqporner.com/hdporn/(.*?).html")
 PATTERN_EXTRACT_CDN_URLS = re.compile(r"href='//(.*?)' style=")
 PATTERN_RESOLUTION = re.compile(r'(\d{3,4})\.mp4')
+
+root_url = "https://hqporner.com"
+root_url_actress = "https://hqporner.com/actress/"
+root_url_category = "https://hqporner.com/category"
