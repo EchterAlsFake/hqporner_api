@@ -1,6 +1,6 @@
 # HQPorner API Documentation
 
-### Current Version 1.0
+### Current Version 1.1
 
 ## Table of Contents
 
@@ -13,6 +13,10 @@
 - [Videos by Actress](#get-videos-by-actress)
 - [Videos by Category](#get-videos-by-category)
 - [Search for Videos](#search-for-videos)
+- [Get Top Porn](#get-top-porn)
+- [Get all categories](#get-all-categories)
+- [Random video](#get-random-video)
+- [Brazzer's Videos](#get-brazzers-videos)
 - [Additional Arguments](#additional-arguments)
 - [Exceptions](#exceptions)
 # Installation
@@ -172,6 +176,38 @@ videos = Client().search_videos(query="Search Query")
 for video in videos:
     print(video.video_title)
 ```
+
+## Get top porn
+
+```python
+from hqporner_api.api import Client
+top_porn = Client().get_top_porn(sort_by="<your_sorting>")
+```
+
+### sort_by:
+
+- month: will sort by month
+- week: will sort by week
+- all_time: will sort by all-time best
+
+## Get all categories
+```python
+from hqporner_api.api import Client
+categories = Client().get_all_categories() # Returns a list with all possible categories
+```
+
+## Get random video
+```python
+from hqporner_api.api import Client
+random_video = Client().get_random_video() # Returns a random video object
+```
+
+## Get brazzers videos
+```python
+from hqporner_api.api import Client
+brazzers_videos = Client().get_brazzers_videos() # Returns brazzers videos (generator)
+```
+
 
 
 # Additional Arguments:

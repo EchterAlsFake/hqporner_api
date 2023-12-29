@@ -19,3 +19,11 @@
 - Added exceptions
 - Updated Documentation
 - Added a new progressbar
+
+# 1.1
+
+- added `get_top_porn` method
+- added `get_all_categories`
+- added `get_random_video`
+- added `get_brazzers_videos`
+- See Documentation for usage details

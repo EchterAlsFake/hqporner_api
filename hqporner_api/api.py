@@ -4,12 +4,13 @@ import string
 from functools import cached_property
 from enum import Enum
 from tqdm import tqdm  # pip install tqdm
+from random import choice
 
 try:
     from .exceptions import *
     from .consts import *
 
-except ModuleNotFoundError:
+except ImportError or ModuleNotFoundError:
     from exceptions import  *
     from consts import *
 
@@ -215,3 +216,50 @@ class Client:
                     urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
                     for url in urls:
                         yield Video(f"{root_url}/hdporn/{url}")
+
+    def get_top_porn(self, sort_by, pages=5) -> Video:
+        """
+        :param sort_by: all_time, month, week
+        :return:
+        """
+        for page in range(1, int(pages + 1)):
+            if sort_by == "all_time":
+                html_content = requests.get(f"{root_url_top}{page}", headers=headers).content.decode("utf-8")
+
+            else:
+                html_content = requests.get(f"{root_url_top}{sort_by}/{page}", headers=headers).content.decode("utf-8")
+
+            match = PATTERN_CANT_FIND.search(html_content)
+            if "Sorry" in match.group(1).strip():
+                break
+
+            else:
+                urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                for url in urls:
+                    yield Video(f"{root_url}/hdporn/{url}")
+
+    def get_all_categories(self) -> list:
+        url = "https://hqporner.com/categories"
+        html_content = requests.get(url, headers=headers).content.decode("utf-8")
+        categories = PATTERN_ALL_CATEGORIES.findall(html_content)
+        return categories
+
+    def get_random_video(self):
+        url = "https://hqporner.com/random-porn"
+        html_content = requests.get(url, headers=headers).content.decode("utf-8")
+        videos = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+        video = choice(videos)
+        return Video(f"{root_url}/hdporn/{video}")
+
+    def get_brazzers_videos(self, pages=5):
+        url = "https://hqporner.com/studio/free-brazzers-videos"
+        for page in range(1, int(pages + 1)):
+            html_content = requests.get(url=f"{url}/{page}").content.decode("utf-8")
+            match = PATTERN_CANT_FIND.search(html_content)
+            if "Sorry" in match.group(1).strip():
+                break
+
+            else:
+                urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                for url in urls:
+                    yield Video(f"{root_url}/hdporn/{url}")
