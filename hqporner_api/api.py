@@ -3,13 +3,16 @@ import requests  # pip install requests
 import string
 from functools import cached_property
 from enum import Enum
-from consts import *
 from tqdm import tqdm  # pip install tqdm
+
 try:
     from .exceptions import *
+    from .consts import *
 
 except ModuleNotFoundError:
     from exceptions import  *
+    from consts import *
+
 
 headers = {
     "Referer": "https://hqporner.com/",
