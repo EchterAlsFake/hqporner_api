@@ -168,11 +168,9 @@ class Client:
 
         for page in range(1, int(pages + 1)):
             final_url = f"{root_url_actress}{name}/{page}"
-            print(f"Requesting: {final_url}")
             html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
             match = PATTERN_CANT_FIND.search(html_content)
             if "Sorry" in match.group(1).strip():
-                print("Breaking")
                 break
 
             urls_ = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
@@ -184,7 +182,6 @@ class Client:
     def get_videos_by_category(self, name: str, pages=5):
         name = name.replace(" ", "-")
         html_content = requests.get(url=f"{root_url_category}{name}").content.decode("utf-8")
-        print(f"Reqeusting: {root_url_category}{name}")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise InvalidCategory
