@@ -30,4 +30,6 @@
 
 # 1.2
 
-- fixed model function
+- fixed get_by_model function
+- fixed get_by_category
+- fixed some constants

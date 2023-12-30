@@ -167,21 +167,24 @@ class Client:
             raise InvalidActress
 
         for page in range(1, int(pages + 1)):
-            final_url = f"{root_url}/{name}/{page}"
+            final_url = f"{root_url_actress}{name}/{page}"
+            print(f"Requesting: {final_url}")
             html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
             match = PATTERN_CANT_FIND.search(html_content)
-            if match.group(1).strip():
+            if "Sorry" in match.group(1).strip():
+                print("Breaking")
                 break
 
             urls_ = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
             for url_ in urls_:
-                url = f"{root_url}/hdporn/{url_}"
+                url = f"{root_url}hdporn/{url_}"
                 if PATTERN_CHECK_URL.match(url):
                     yield Video(url)
 
     def get_videos_by_category(self, name: str, pages=5):
         name = name.replace(" ", "-")
         html_content = requests.get(url=f"{root_url_category}{name}").content.decode("utf-8")
+        print(f"Reqeusting: {root_url_category}{name}")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise InvalidCategory
@@ -261,5 +264,5 @@ class Client:
 
             else:
                 urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
-                for url in urls:
-                    yield Video(f"{root_url}/hdporn/{url}")
+                for url_ in urls:
+                    yield Video(f"{root_url}/hdporn/{url_}")
