@@ -167,7 +167,7 @@ class Client:
             raise InvalidActress
 
         for page in range(1, int(pages + 1)):
-            final_url = f"{root_url}{name}/{page}"
+            final_url = f"{root_url}/{name}/{page}"
             html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
             match = PATTERN_CANT_FIND.search(html_content)
             if match.group(1).strip():

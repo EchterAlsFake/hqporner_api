@@ -27,3 +27,7 @@
 - added `get_random_video`
 - added `get_brazzers_videos`
 - See Documentation for usage details
+
+# 1.2
+
+- fixed model function

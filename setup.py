@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="hqporner_api",
-    version="1.1",
+    version="1.2",
     packages=find_packages(),
     install_requires=[
         "tqdm", "requests"
