@@ -11,3 +11,10 @@ class NoVideosFound(Exception):
 class InvalidActress(Exception):
     def __init__(self):
         self.msg = "Invalid Actress!"
+
+
+class InvalidURL(Exception):
+    def __init__(self):
+        self.msg = "Invalid URL!"
+
+

@@ -1,24 +1,59 @@
 import os
-import requests  # pip install requests
 import string
-from functools import cached_property
+from functools import cached_property, wraps
 from enum import Enum
 from tqdm import tqdm  # pip install tqdm
 from random import choice
 
 try:
-    from .exceptions import *
+    from .errors import *
     from .consts import *
+    from .functions import *
 
 except ImportError or ModuleNotFoundError:
-    from exceptions import  *
+    from errors import *
     from consts import *
-
+    from functions import *
 
 headers = {
     "Referer": "https://hqporner.com/",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36",
 }  # Use this to prevent detection mechanisms...
+
+
+def validate_url(func):
+    @wraps(func)
+    def wrapper(url, *args, **kwargs):
+        if check_url(url):
+            return func(url, *args, **kwargs)
+        else:
+            raise InvalidURL
+
+    return wrapper
+
+
+def validate_actress(func):
+    @wraps(func)
+    def wrapper(actress,  *args, **kwargs):
+        if check_actress(actress):
+            return func(actress, *args, **kwargs)
+
+        else:
+            raise InvalidActress
+
+    return wrapper
+
+
+def validate_category(func):
+    @wraps(func)
+    def wrapper(category, *args, **kwargs):
+        if check_category(category):
+            return func(category, *args, **kwargs)
+
+        else:
+            raise InvalidCategory
+
+    return wrapper
 
 
 class Quality(Enum):
@@ -155,48 +190,37 @@ class Video:
 
 class Client:
 
+    @validate_url
     def get_video(self, url):
         return Video(url)
 
+    @validate_actress
     def get_videos_by_actress(self, name: str, pages=5):
         name = name.replace(" ", "-")
-
-        response = requests.get(f"https://hqporner.com/actress/{name}").content.decode("utf-8")
-        match = PATTERN_CANT_FIND.search(response)
-        if "Sorry" in match.group(1).strip():
-            raise InvalidActress
-
         for page in range(1, int(pages + 1)):
             final_url = f"{root_url_actress}{name}/{page}"
             html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
-            match = PATTERN_CANT_FIND.search(html_content)
-            if "Sorry" in match.group(1).strip():
+            if not check_for_page(html_content):
                 break
 
-            urls_ = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+            urls_ = PATTERN_VIDEOS_ON_SITE.findall(html_content)
             for url_ in urls_:
                 url = f"{root_url}hdporn/{url_}"
                 if PATTERN_CHECK_URL.match(url):
                     yield Video(url)
 
+    @validate_category
     def get_videos_by_category(self, name: str, pages=5):
         name = name.replace(" ", "-")
-        html_content = requests.get(url=f"{root_url_category}{name}").content.decode("utf-8")
-        match = PATTERN_CANT_FIND.search(html_content)
-        if "Sorry" in match.group(1).strip():
-            raise InvalidCategory
+        for page in range(1, int(pages + 1)):
+            html_content = requests.get(url=f"{root_url_category}{name}/{page}").content.decode("utf-8")
+            if not check_for_page(html_content):
+                break
 
-        else:
-            for page in range(1, int(pages + 1)):
-                html_content = requests.get(url=f"{root_url_category}{name}/{page}").content.decode("utf-8")
-                match = PATTERN_CANT_FIND.search(html_content)
-                if "Sorry" in match.group(1).strip():
-                    break
-
-                else:
-                    urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
-                    for url in urls:
-                        yield Video(f"{root_url}/hdporn/{url}")
+            else:
+                urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
+                for url in urls:
+                    yield Video(f"{root_url}hdporn/{url}")
 
     def search_videos(self, query: str, pages=5):
         query = query.replace(" ", "+")
@@ -208,14 +232,13 @@ class Client:
         else:
             for page in range(1, int(pages + 1)):
                 html_content = requests.get(url=f"{root_url}/?q={query}&p={page}").content.decode("utf-8")
-                match = PATTERN_CANT_FIND.search(html_content)
-                if "Sorry" in match.group(1).strip():
+                if not check_for_page(html_content):
                     break
 
                 else:
-                    urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                    urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                     for url in urls:
-                        yield Video(f"{root_url}/hdporn/{url}")
+                        yield Video(f"{root_url}hdporn/{url}")
 
     def get_top_porn(self, sort_by, pages=5) -> Video:
         """
@@ -229,14 +252,13 @@ class Client:
             else:
                 html_content = requests.get(f"{root_url_top}{sort_by}/{page}", headers=headers).content.decode("utf-8")
 
-            match = PATTERN_CANT_FIND.search(html_content)
-            if "Sorry" in match.group(1).strip():
+            if not check_for_page(html_content):
                 break
 
             else:
-                urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url in urls:
-                    yield Video(f"{root_url}/hdporn/{url}")
+                    yield Video(f"{root_url}hdporn/{url}")
 
     def get_all_categories(self) -> list:
         url = "https://hqporner.com/categories"
@@ -247,19 +269,19 @@ class Client:
     def get_random_video(self):
         url = "https://hqporner.com/random-porn"
         html_content = requests.get(url, headers=headers).content.decode("utf-8")
-        videos = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+        videos = PATTERN_VIDEOS_ON_SITE.findall(html_content)
         video = choice(videos)
-        return Video(f"{root_url}/hdporn/{video}")
+        return Video(f"{root_url}hdporn/{video}")
 
     def get_brazzers_videos(self, pages=5):
         url = "https://hqporner.com/studio/free-brazzers-videos"
         for page in range(1, int(pages + 1)):
             html_content = requests.get(url=f"{url}/{page}").content.decode("utf-8")
-            match = PATTERN_CANT_FIND.search(html_content)
-            if "Sorry" in match.group(1).strip():
+            if not check_for_page(html_content):
                 break
 
             else:
-                urls = PATTERN_VIDEOS_BY_ACTRESS.findall(html_content)
+                urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url_ in urls:
-                    yield Video(f"{root_url}/hdporn/{url_}")
+                    yield Video(f"{root_url}hdporn/{url_}")
+
