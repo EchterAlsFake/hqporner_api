@@ -43,7 +43,7 @@ Import HQPorner API like in the example below:
 
 ```python
 from hqporner_api.api import Client, Quality, Video
-from hqporner_api.errors import InvalidCategory, NoVideosFound, InvalidActress
+from hqporner_api.modules.errors import InvalidCategory, NoVideosFound, InvalidActress
 ```
 
 # Quality

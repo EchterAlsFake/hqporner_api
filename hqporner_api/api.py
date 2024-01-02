@@ -2,18 +2,13 @@ import os
 import string
 from functools import cached_property, wraps
 from enum import Enum
-from tqdm import tqdm  # pip install tqdm
 from random import choice
+from typing import Any, Callable
 
-try:
-    from .errors import *
-    from .consts import *
-    from .functions import *
-
-except ImportError or ModuleNotFoundError:
-    from errors import *
-    from consts import *
-    from functions import *
+from hqporner_api.modules.errors import *
+from hqporner_api.modules.consts import *
+from hqporner_api.modules.functions import *
+from hqporner_api.modules.progress_bars import *
 
 headers = {
     "Referer": "https://hqporner.com/",
@@ -21,20 +16,20 @@ headers = {
 }  # Use this to prevent detection mechanisms...
 
 
-def validate_url(func):
+def validate_url(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(url, *args, **kwargs):
+    def wrapper(self, url, *args, **kwargs) -> Any:
+        print(f"URL: {url}")
         if check_url(url):
-            return func(url, *args, **kwargs)
+            return func(self, url, *args, **kwargs)
         else:
             raise InvalidURL
-
     return wrapper
 
 
-def validate_actress(func):
+def validate_actress(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(actress,  *args, **kwargs):
+    def wrapper(self, actress,  *args, **kwargs) -> Callable:
         if check_actress(actress):
             return func(actress, *args, **kwargs)
 
@@ -44,9 +39,9 @@ def validate_actress(func):
     return wrapper
 
 
-def validate_category(func):
+def validate_category(func: Callable) -> Callable:
     @wraps(func)
-    def wrapper(category, *args, **kwargs):
+    def wrapper(self, category, *args, **kwargs) -> Callable:
         if check_category(category):
             return func(category, *args, **kwargs)
 
@@ -62,23 +57,8 @@ class Quality(Enum):
     WORST = 'WORST'
 
 
-class Callback:
-
-    def custom_callback(self, downloaded, total):
-        """This is an example of how you can implement the custom callback"""
-
-        percentage = (downloaded / total) * 100
-        print(f"Downloaded: {downloaded} bytes / {total} bytes ({percentage:.2f}%)")
-
-    def text_progress_bar(self, downloaded, total):
-        bar_length = 50
-        filled_length = int(round(bar_length * downloaded / float(total)))
-        percents = round(100.0 * downloaded / float(total), 1)
-        bar = '#' * filled_length + '-' * (bar_length - filled_length)
-        print(f"\r[{bar}] {percents}%", end='')
-
-
 class Video:
+    @validate_url
     def __init__(self, url):
         self.url = url
         self.html_content = requests.get(url=self.url, headers=headers).content.decode("utf-8")
@@ -163,7 +143,7 @@ class Video:
         file_size = int(response.headers.get('content-length', 0))
 
         if callback is None:
-            progress_bar = tqdm(total=file_size, unit='B', unit_scale=True, desc=title)
+            progress_bar = Callback()
 
         downloaded_so_far = 0
 
@@ -177,10 +157,10 @@ class Video:
                         callback(downloaded_so_far, file_size)
 
                     else:
-                        progress_bar.update(len(chunk))
+                        progress_bar.text_progress_bar(downloaded=downloaded_so_far, total=file_size)
 
             if not callback:
-                progress_bar.close()
+                del progress_bar
 
     def strip_title(self, title) -> str:
         illegal_chars = '<>:"/\\|?*'

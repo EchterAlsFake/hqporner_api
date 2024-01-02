@@ -1,4 +1,4 @@
 from .api import Client, Quality, Video
-from .errors import *
-from .consts import *
-from .functions import *
+from hqporner_api.modules.errors import *
+from hqporner_api.modules.consts import *
+from hqporner_api.modules.functions import *
