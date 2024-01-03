@@ -10,6 +10,14 @@
 HQPorner API is an API for HQPorner. It allows you to fetch information from videos using regexes and requests.
 It is optimized for performance and as lightweight as possible.
 
+# Disclaimer
+
+[!IMPORTANT] HQPorner is in violation to HQporner's ToS!
+
+Copyright Information: I have no intention of stealing copyright protected content or slowing down
+a website. Contact me at my E-Mail, and I'll take this Repository immediately offline.
+
+
 # Quickstart
 
 ### Have a look at the [Documentation](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/DOCUMENTATION.md) for more details
@@ -55,7 +63,7 @@ Pull requests are also welcome, but please avoid bs4 and use regex :)
 # License
 Licensed under the LGPLv3 License
 
-Copyright (C) 2023 Johannes Habel
+Copyright (C) 2023–2024 Johannes Habel
 
 # Support
 

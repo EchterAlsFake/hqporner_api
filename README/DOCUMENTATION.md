@@ -1,6 +1,12 @@
 # HQPorner API Documentation
 
-### Current Version 1.2
+### Current Version 1.3
+
+Disclaimer:
+- Usage of this API is in violation of HQporner's ToS!
+- I have no authorization.
+- I am not interested in a lawsuit.
+- Contact me at my E-Mail if you feel this Repository should be deleted, and I'll do so without discussing
 
 ## Table of Contents
 
@@ -33,8 +39,6 @@ $ pip install git+https://github.com/EchterAlsFake/hqporner_api
 # Dependencies
 
 HQPorner API depends on the following libraries:
-
-- [tqdm](https://github.com/tqdm/tqdm)
 - [requests](https://github.com/psf/requests)
 
 # Usage
@@ -44,15 +48,16 @@ Import HQPorner API like in the example below:
 ```python
 from hqporner_api.api import Client, Quality, Video
 from hqporner_api.modules.errors import InvalidCategory, NoVideosFound, InvalidActress
+from hqporner_api.modules.locals import *
 ```
 
 # Quality
 
-The quality class is used for video downloading. It has three methods:
+The quality class is used for video downloading. It has three attributes:
 
 - Quality.BEST (representing the best quality)
 - Quality.HALF (representing something in the middle)
-- Quality.WORST (worst quality)
+- Quality.WORST (representing the worst quality)
 
 # Client
 ### Initialize a Client
@@ -70,7 +75,7 @@ video = Client().get_video(url="<video_url>")
 
 ### Cached Objects
 
-Most objects are cached. Meaning, that everytime you access the API without changing the video, the attributes
+Most objects are cached. Meaning that every time you access the API without changing the video, the attributes
 aren't reloaded. Instead, they are cached. This makes it very efficient. 
 
 The objects are:
@@ -147,6 +152,7 @@ def custom_callback(self, downloaded, total):
 
 ```python
 from hqporner_api.api import Client
+
 actress_object = Client().get_videos_by_actress("<actress-name>")
 
 # You can now iterate through all videos from an actress:
@@ -161,10 +167,20 @@ for video in actress_object:
 
 ```python
 from hqporner_api.api import Client
-videos = Client().get_videos_by_category("<category-name>")
+from hqporner_api.modules.locals import Category
+videos = Client().get_videos_by_category(Category) 
 
 for video in videos:
     print(video.video_title)
+
+"""
+All attributes of the Category class can be found in locals.py
+You can also see all categories at hqporner.com/categories
+
+The Category can also be a string. e.g Category.BIG_TITS would be equivalent to big-tits
+
+"""
+
 ```
 
 ## Search for videos
@@ -181,14 +197,18 @@ for video in videos:
 
 ```python
 from hqporner_api.api import Client
-top_porn = Client().get_top_porn(sort_by="<your_sorting>")
+from hqporner_api.modules.locals import Sort
+top_porn = Client().get_top_porn(sort_by=Sort) 
+
+"""
+Sort:
+
+1) Sort.WEEK
+2) Sort.MONTH
+3) Sort.ALL_TIME
+"""
 ```
 
-### sort_by:
-
-- month: will sort by month
-- week: will sort by week
-- all_time: will sort by all-time best
 
 ## Get all categories
 ```python
@@ -205,16 +225,15 @@ random_video = Client().get_random_video() # Returns a random video object
 ## Get brazzers videos
 ```python
 from hqporner_api.api import Client
-brazzers_videos = Client().get_brazzers_videos() # Returns brazzers videos (generator)
+brazzers_videos = Client().get_brazzers_videos(pages=int) # Returns brazzers videos (generator) (pages: optional)
 ```
-
-
 
 # Additional Arguments:
 
 Some methods have a `pages` argument. This argument defines over how many pages the script iterates on HQPorner.
-For example the Pornstar Anissa Kate has currently over 162 videos. If you scroll down, you can see that
+For example, the Pornstar Anissa Kate has currently over 162 videos. If you scroll down, you can see that
 those are packed in 4 pages. If no more pages are left, the generator will simply stop and everything's fine.
+One page = 46 videos
 
 # Exceptions
 

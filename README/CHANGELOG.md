@@ -33,3 +33,14 @@
 - fixed get_by_model function
 - fixed get_by_category
 - fixed some constants
+
+# 1.3
+
+- restructured some methods
+- added some stuff related to code quality
+- fixed some issues in the consts
+- added `Category` and `Sort` object
+- added decorators to check video objects a bit better (still not the best)
+- removed tqdm, as I think we don't need it and a text progressbar is good enough
+
+I recommend reading through the documentation, as some usages have changed.

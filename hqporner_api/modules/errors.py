@@ -16,5 +16,3 @@ class InvalidActress(Exception):
 class InvalidURL(Exception):
     def __init__(self):
         self.msg = "Invalid URL!"
-
-

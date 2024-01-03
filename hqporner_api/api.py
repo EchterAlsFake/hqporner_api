@@ -1,25 +1,18 @@
 import os
 import string
 from functools import cached_property, wraps
-from enum import Enum
 from random import choice
-from typing import Any, Callable
+from typing import Any, Generator, Callable
 
+from hqporner_api.modules.locals import *
 from hqporner_api.modules.errors import *
-from hqporner_api.modules.consts import *
 from hqporner_api.modules.functions import *
 from hqporner_api.modules.progress_bars import *
 
-headers = {
-    "Referer": "https://hqporner.com/",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36",
-}  # Use this to prevent detection mechanisms...
 
-
-def validate_url(func: Callable) -> Callable:
+def validate_url(func: Callable):
     @wraps(func)
     def wrapper(self, url, *args, **kwargs) -> Any:
-        print(f"URL: {url}")
         if check_url(url):
             return func(self, url, *args, **kwargs)
         else:
@@ -27,11 +20,11 @@ def validate_url(func: Callable) -> Callable:
     return wrapper
 
 
-def validate_actress(func: Callable) -> Callable:
+def validate_actress(func: Callable):
     @wraps(func)
     def wrapper(self, actress,  *args, **kwargs) -> Callable:
         if check_actress(actress):
-            return func(actress, *args, **kwargs)
+            return func(self, actress, *args, **kwargs)
 
         else:
             raise InvalidActress
@@ -39,11 +32,11 @@ def validate_actress(func: Callable) -> Callable:
     return wrapper
 
 
-def validate_category(func: Callable) -> Callable:
+def validate_category(func: Callable):
     @wraps(func)
-    def wrapper(self, category, *args, **kwargs) -> Callable:
+    def wrapper(self, category: Category, *args,  **kwargs):
         if check_category(category):
-            return func(category, *args, **kwargs)
+            return func(self, category, *args, **kwargs)
 
         else:
             raise InvalidCategory
@@ -51,20 +44,32 @@ def validate_category(func: Callable) -> Callable:
     return wrapper
 
 
-class Quality(Enum):
-    BEST = 'BEST'
-    HALF = 'HALF'
-    WORST = 'WORST'
-
-
 class Video:
+    """
+    Creates a Video object, which can be used to retrieve information of a HQPorner video and download it.
+    """
     @validate_url
     def __init__(self, url):
+        """
+        Initialize a new Video instance.
+
+        This method takes a URL, validates it, and then fetches the HTML content of the web page at that URL.
+
+        Args:
+            url (str): A URL string pointing to a video. The URL should be valid and accessible.
+
+        Attributes:
+            url (str): The URL of the video.
+            html_content (str): The HTML content of the web page at the provided URL.
+        """
         self.url = url
         self.html_content = requests.get(url=self.url, headers=headers).content.decode("utf-8")
 
     @cached_property
     def video_title(self) -> str:
+        """
+        :return: str: The video title (lowercase)
+        """
         match = PATTERN_TITLE.search(self.html_content)
         if match:
             title = match.group(1)
@@ -72,6 +77,9 @@ class Video:
 
     @cached_property
     def cdn_url(self) -> str:
+        """
+        :return: str: The Content Delivery Network URL for the video
+        """
         match = PATTERN_CDN_URL.search(self.html_content)
         if match:
             url_path = match.group(1)
@@ -79,28 +87,43 @@ class Video:
 
     @cached_property
     def pornstars(self) -> list:
+        """
+        :return: list: The list of pornstars featured in the video
+        """
         actress_names = PATTERN_ACTRESS.findall(self.html_content)
         return actress_names
 
     @cached_property
     def video_length(self) -> str:
+        """
+        :return: str: The length of the video in h / m / s format
+        """
         match = PATTERN_VIDEO_LENGTH.search(self.html_content)
         if match:
             return match.group(1)
 
     @cached_property
     def publish_date(self) -> str:
+        """
+        :return: str: How many months ago the video was uploaded
+        """
         match = PATTERN_PUBLISH_DATE.search(self.html_content)
         if match:
             return match.group(1)
 
     @cached_property
     def categories(self) -> list:
+        """
+        :return: list: A list of categories featured in this video
+        """
         categories = PATTERN_CATEGORY.findall(self.html_content)
         return categories
 
     @cached_property
     def video_qualities(self) -> list:
+        """
+        :return: list: The available qualities of the video
+        """
         quals = self.direct_download_urls
         qualities = set()  # Using a set to avoid duplicates
 
@@ -113,12 +136,22 @@ class Video:
 
     @cached_property
     def direct_download_urls(self) -> list:
+        """
+        :return: list: The direct download urls for all available qualities
+        """
         cdn_url = f"https://{self.cdn_url}"
         html_content = requests.get(url=cdn_url, headers=headers).content.decode("utf-8")
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
     def download(self, quality, output_path="./", no_title=False, callback=None):
+        """
+        :param quality:
+        :param output_path:
+        :param no_title:
+        :param callback:
+        :return:
+        """
         cdn_urls = self.direct_download_urls
         quals = self.video_qualities
         quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}
@@ -162,7 +195,12 @@ class Video:
             if not callback:
                 del progress_bar
 
-    def strip_title(self, title) -> str:
+    @classmethod
+    def strip_title(cls, title: str) -> str:
+        """
+        :param title:
+        :return: str: strips out non UTF-8 chars of the title
+        """
         illegal_chars = '<>:"/\\|?*'
         cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
         return cleaned_title
@@ -171,11 +209,20 @@ class Video:
 class Client:
 
     @validate_url
-    def get_video(self, url):
+    def get_video(self, url: str) -> Video:
+        """
+        :param url:
+        :return: Video object
+        """
         return Video(url)
 
     @validate_actress
-    def get_videos_by_actress(self, name: str, pages=5):
+    def get_videos_by_actress(self, name: str, pages: int = 5) -> Generator[Video, None, None]:
+        """
+        :param name:
+        :param pages: int: one page contains 46 videos
+        :return:
+        """
         name = name.replace(" ", "-")
         for page in range(1, int(pages + 1)):
             final_url = f"{root_url_actress}{name}/{page}"
@@ -190,10 +237,14 @@ class Client:
                     yield Video(url)
 
     @validate_category
-    def get_videos_by_category(self, name: str, pages=5):
-        name = name.replace(" ", "-")
+    def get_videos_by_category(self, category: Category, pages=5) -> Generator[Video, None, None]:
+        """
+        :param category: Category: The video category
+        :param pages: int: one page contains 46 videos
+        :return:
+        """
         for page in range(1, int(pages + 1)):
-            html_content = requests.get(url=f"{root_url_category}{name}/{page}").content.decode("utf-8")
+            html_content = requests.get(url=f"{root_url_category}{category}/{page}").content.decode("utf-8")
             if not check_for_page(html_content):
                 break
 
@@ -202,7 +253,13 @@ class Client:
                 for url in urls:
                     yield Video(f"{root_url}hdporn/{url}")
 
-    def search_videos(self, query: str, pages=5):
+    @classmethod
+    def search_videos(cls, query: str, pages: int = 5) -> Generator[Video, None, None]:
+        """
+        :param query:
+        :param pages: int: one page contains 46 videos
+        :return:
+        """
         query = query.replace(" ", "+")
         html_content = requests.get(url=f"{root_url}/?q={query}").content.decode("utf-8")
         match = PATTERN_CANT_FIND.search(html_content)
@@ -220,8 +277,10 @@ class Client:
                     for url in urls:
                         yield Video(f"{root_url}hdporn/{url}")
 
-    def get_top_porn(self, sort_by, pages=5) -> Video:
+    @classmethod
+    def get_top_porn(cls, sort_by: Sort, pages: int = 5) -> Generator[Video, None, None]:
         """
+        :param pages: int: one page contains 46 videos
         :param sort_by: all_time, month, week
         :return:
         """
@@ -240,23 +299,33 @@ class Client:
                 for url in urls:
                     yield Video(f"{root_url}hdporn/{url}")
 
-    def get_all_categories(self) -> list:
-        url = "https://hqporner.com/categories"
-        html_content = requests.get(url, headers=headers).content.decode("utf-8")
+    @classmethod
+    def get_all_categories(cls) -> list:
+        """
+        :return: list: Returns all categories of HQporner as a list of strings
+        """
+        html_content = requests.get(root_url_category, headers=headers).content.decode("utf-8")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
-    def get_random_video(self):
-        url = "https://hqporner.com/random-porn"
-        html_content = requests.get(url, headers=headers).content.decode("utf-8")
+    @classmethod
+    def get_random_video(cls) -> Video:
+        """
+        :return: Video object (random video from HQPorner)
+        """
+        html_content = requests.get(root_random, headers=headers).content.decode("utf-8")
         videos = PATTERN_VIDEOS_ON_SITE.findall(html_content)
-        video = choice(videos)
+        video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}")
 
-    def get_brazzers_videos(self, pages=5):
-        url = "https://hqporner.com/studio/free-brazzers-videos"
+    @classmethod
+    def get_brazzers_videos(cls, pages=5) -> Generator[Video, None, None]:
+        """
+        :param pages: int: one page contains 46 videos
+        :return:
+        """
         for page in range(1, int(pages + 1)):
-            html_content = requests.get(url=f"{url}/{page}").content.decode("utf-8")
+            html_content = requests.get(url=f"{root_brazzers}/{page}").content.decode("utf-8")
             if not check_for_page(html_content):
                 break
 
@@ -264,4 +333,3 @@ class Client:
                 urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url_ in urls:
                     yield Video(f"{root_url}hdporn/{url_}")
-

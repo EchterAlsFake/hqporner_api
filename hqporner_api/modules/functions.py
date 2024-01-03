@@ -1,8 +1,8 @@
 import requests
 from hqporner_api.modules.consts import *
-from typing import Callable
 
-def check_for_page(html_content) -> Callable:
+
+def check_for_page(html_content) -> bool:
     match = PATTERN_CANT_FIND.search(html_content)
     try:
         if "Sorry" in match.group(1).strip():
@@ -15,7 +15,7 @@ def check_for_page(html_content) -> Callable:
         return False
 
 
-def check_url(url) -> Callable:
+def check_url(url) -> bool:
     try:
         if not PATTERN_CHECK_URL.match(url).group(1):
             return False
@@ -26,7 +26,8 @@ def check_url(url) -> Callable:
     except AttributeError:
         return False
 
-def check_actress(actress) -> Callable:
+
+def check_actress(actress) -> bool:
 
     if str(actress).startswith("https://"):
         actress = re.search("https://hqporner.com/actress/(.*?)")
@@ -39,8 +40,8 @@ def check_actress(actress) -> Callable:
         return True
 
 
-def check_category(category) -> Callable:
-    content = requests.get(f"{root_url}{category}").content.decode("utf-8")
+def check_category(category) -> bool:
+    content = requests.get(f"{root_url_category}{category}").content.decode("utf-8")
     if not check_for_page(content):
         return False
 

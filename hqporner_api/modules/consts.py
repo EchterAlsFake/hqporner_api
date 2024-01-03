@@ -20,3 +20,10 @@ root_url = "https://hqporner.com/"
 root_url_actress = "https://hqporner.com/actress/"
 root_url_category = "https://hqporner.com/category/"
 root_url_top = "https://hqporner.com/top/"
+root_random = "https://hqporner.com/random-porn"
+root_brazzers = "https://hqporner.com/studio/free-brazzers-videos"
+
+headers = {
+    "Referer": "https://hqporner.com/",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36",
+}
