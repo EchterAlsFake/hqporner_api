@@ -29,15 +29,17 @@ def check_url(url) -> bool:
 
 def check_actress(actress) -> bool:
 
-    if str(actress).startswith("https://"):
-        actress = re.search("https://hqporner.com/actress/(.*?)")
-
-    content = requests.get(f"{root_url_actress}{actress}").content.decode("utf-8")
-    if not check_for_page(content):
-        return False
+    match = re.search("hqporner.com/actress/(.+)", actress)
+    if match:
+        return True
 
     else:
-        return True
+        content = requests.get(f"{root_url_actress}{actress}").content.decode("utf-8")
+        if not check_for_page(content):
+            return False
+
+        else:
+            return True
 
 
 def check_category(category) -> bool:

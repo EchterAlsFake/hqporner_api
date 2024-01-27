@@ -44,3 +44,8 @@
 - removed tqdm, as I think we don't need it and a text progressbar is good enough
 
 I recommend reading through the documentation, as some usages have changed.
+
+# 1.4
+
+- fixed the list category function
+- you can now also input an actress URL instead of the name

@@ -153,7 +153,8 @@ def custom_callback(self, downloaded, total):
 ```python
 from hqporner_api.api import Client
 
-actress_object = Client().get_videos_by_actress("<actress-name>")
+actress_object = Client().get_videos_by_actress("<actress-name>") 
+# You can also enter an actress URl e.g hqporner.com/actress/...
 
 # You can now iterate through all videos from an actress:
 

@@ -223,6 +223,10 @@ class Client:
         :param pages: int: one page contains 46 videos
         :return:
         """
+        match = re.search("hqporner.com/actress/(.+)", name)
+        if match:
+            name = match.group(1)
+
         name = name.replace(" ", "-")
         for page in range(1, int(pages + 1)):
             final_url = f"{root_url_actress}{name}/{page}"
@@ -304,7 +308,7 @@ class Client:
         """
         :return: list: Returns all categories of HQporner as a list of strings
         """
-        html_content = requests.get(root_url_category, headers=headers).content.decode("utf-8")
+        html_content = requests.get("https://hqporner.com/categories", headers=headers).content.decode("utf-8")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
