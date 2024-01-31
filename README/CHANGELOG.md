@@ -43,4 +43,7 @@
 - added decorators to check video objects a bit better (still not the best)
 - removed tqdm, as I think we don't need it and a text progressbar is good enough
 
-I recommend reading through the documentation, as some usages have changed.
+I recommend reading through t he documentation, as some usages have changed.
+
+# 1.4
+- You can now pass the quality parameter as a string instead of the object

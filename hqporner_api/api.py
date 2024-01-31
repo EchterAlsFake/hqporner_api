@@ -65,6 +65,21 @@ class Video:
         self.url = url
         self.html_content = requests.get(url=self.url, headers=headers).content.decode("utf-8")
 
+    @classmethod
+    def fix_quality(cls, quality):
+        if isinstance(quality, Quality):
+            return quality
+
+        else:
+            if str(quality) == "best":
+                return Quality.BEST
+
+            elif str(quality) == "half":
+                return Quality.HALF
+
+            elif str(quality) == "worst":
+                return Quality.WORST
+
     @cached_property
     def video_title(self) -> str:
         """
@@ -152,6 +167,8 @@ class Video:
         :param callback:
         :return:
         """
+        quality = self.fix_quality(quality)
+
         cdn_urls = self.direct_download_urls
         quals = self.video_qualities
         quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}

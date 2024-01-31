@@ -1,6 +1,6 @@
 # HQPorner API Documentation
 
-### Current Version 1.3
+### Current Version 1.4
 
 Disclaimer:
 - Usage of this API is in violation of HQporner's ToS!
@@ -58,6 +58,12 @@ The quality class is used for video downloading. It has three attributes:
 - Quality.BEST (representing the best quality)
 - Quality.HALF (representing something in the middle)
 - Quality.WORST (representing the worst quality)
+
+! This can also be a string instead of the object like:
+
+- Quality.BEST == `best`
+- Quality.HALF == `half`
+- Quality.WORST == `worst`
 
 # Client
 ### Initialize a Client
