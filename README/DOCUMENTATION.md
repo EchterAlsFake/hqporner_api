@@ -1,6 +1,6 @@
 # HQPorner API Documentation
 
-### Current Version 1.4
+### Current Version 1.5
 
 Disclaimer:
 - Usage of this API is in violation of HQporner's ToS!

@@ -49,3 +49,7 @@ I recommend reading through the documentation, as some usages have changed.
 
 - fixed the list category function
 - you can now also input an actress URL instead of the name
+
+# 1.5
+
+- You can now pass a string to the quality argument instead of the object
