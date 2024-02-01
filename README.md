@@ -41,12 +41,12 @@ video_object.download(quality=Quality.BEST, output_path="your_output_path")
 
 actress_generator = client.get_videos_by_actress("anissa-kate")
 for video in actress_generator:
-    print(video.video_title) # etc...
+    print(video.title) # etc...
 
 # Search for videos
 videos = client.search_videos(query="Your query here")
 for video in videos:
-    print(video.video_title)
+    print(video.title)
 
 # SEE DOCUMENTATION FOR MORE
 ```

@@ -81,7 +81,7 @@ class Video:
                 return Quality.WORST
 
     @cached_property
-    def video_title(self) -> str:
+    def title(self) -> str:
         """
         :return: str: The video title (lowercase)
         """
@@ -182,7 +182,7 @@ class Video:
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
-        title = self.strip_title(self.video_title)
+        title = self.strip_title(self.title)
         if no_title:
             final_path = output_path
 

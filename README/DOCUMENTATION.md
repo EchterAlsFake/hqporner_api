@@ -1,12 +1,10 @@
 # HQPorner API Documentation
 
-### Current Version 1.5
-
-Disclaimer:
-- Usage of this API is in violation of HQporner's ToS!
-- I have no authorization.
-- I am not interested in a lawsuit.
-- Contact me at my E-Mail if you feel this Repository should be deleted, and I'll do so without discussing
+> - Version 1.5
+> - Author: Johannes Habel
+> - Copryight (C) 2024
+> - License: GPL 3
+> - Dependencies: requests,
 
 ## Table of Contents
 
@@ -15,31 +13,33 @@ Disclaimer:
 - [Usage](#usage)
 - [Quality](#quality)
 - [Client](#client)
-- [Video](#basic-video-information)
-- [Videos by Actress](#get-videos-by-actress)
-- [Videos by Category](#get-videos-by-category)
-- [Search for Videos](#search-for-videos)
-- [Get Top Porn](#get-top-porn)
-- [Get all categories](#get-all-categories)
-- [Random video](#get-random-video)
-- [Brazzer's Videos](#get-brazzers-videos)
+  - [Video](#basic-video-information)
+  - [Videos by Actress](#get-videos-by-actress)
+  - [Videos by Category](#get-videos-by-category)
+  - [Search for Videos](#search-for-videos)
+  - [Get Top Porn](#get-top-porn)
+  - [Get all categories](#get-all-categories)
+  - [Random video](#get-random-video)
+  - [Brazzer's Videos](#get-brazzers-videos)
+- [Locals](#locals)
 - [Additional Arguments](#additional-arguments)
 - [Exceptions](#exceptions)
+- [Quality](#quality)
+
 # Installation
-````
+
 Installation using pip:
 
-$ pip install hqporner_api
+$ `pip install hqporner_api`
 
 Or Install directly from GitHub
 
-$ pip install git+https://github.com/EchterAlsFake/hqporner_api
-````
+`pip install git+https://github.com/EchterAlsFake/hqporner_api`
 
-# Dependencies
+# Important Notice
+The ToS of hqporner.com clearly say, that using scrapers / bots isn't allowed.
+> Using this API is on your risk. I am not liable for your actions!
 
-HQPorner API depends on the following libraries:
-- [requests](https://github.com/psf/requests)
 
 # Usage
 
@@ -51,24 +51,11 @@ from hqporner_api.modules.errors import InvalidCategory, NoVideosFound, InvalidA
 from hqporner_api.modules.locals import *
 ```
 
-# Quality
-
-The quality class is used for video downloading. It has three attributes:
-
-- Quality.BEST (representing the best quality)
-- Quality.HALF (representing something in the middle)
-- Quality.WORST (representing the worst quality)
-
-! This can also be a string instead of the object like:
-
-- Quality.BEST == `best`
-- Quality.HALF == `half`
-- Quality.WORST == `worst`
-
 # Client
 ### Initialize a Client
 
 ```python
+from hqporner_api.api import Client
 client = Client()
 ```
 
@@ -84,47 +71,17 @@ video = Client().get_video(url="<video_url>")
 Most objects are cached. Meaning that every time you access the API without changing the video, the attributes
 aren't reloaded. Instead, they are cached. This makes it very efficient. 
 
-The objects are:
+## Video Attributes
 
-- Video().video_title
-- Video().cdn_url
-- Video().pornstars
-- Video().video_length
-- Video().publish_date
-- Video().categories
-- Video().video_qualities
-- Video().direct_download_urls
-
-## Basic Video Information:
-
-```python
-from hqporner_api.api import Client
-video = Client().get_video("<video_url>")
-
-# access video title:
-video.video_title # Returns a string
-
-# access the content delivery network url:
-video.cdn_url # Returns a string
-
-# access pornstars
-video.pornstars # Returns a list
-
-# access video length
-video.video_length # Returns a string
-
-# access publish date
-video.publish_date # Returns a string
-
-# access categories
-video.categories # Returns a list
-
-# access qualities
-video.video_qualities # Returns a list
-
-# access direct download urls (for all qualities)
-video.direct_download_urls
-```
+| Attribute             | Returns |  is cached?   |
+|:----------------------|:-------:|:-------------:|
+| .title                |   str   |      Yes      |
+| .pornstars            |  list   |      Yes      |
+| .video_length         |   str   |      Yes      |
+| .publish_date         |   str   |      Yes      |
+| .categories           |  list   |      Yes      |
+| .video_qualities      |  list   |      Yes      |
+| .direct_download_urls |  list   |      Yes      |
 
 ## Download a video
 
@@ -165,7 +122,7 @@ actress_object = Client().get_videos_by_actress("<actress-name>")
 # You can now iterate through all videos from an actress:
 
 for video in actress_object:
-    print(video.video_title)
+    print(video.title)
 
 # This will include ALL videos. Not only from the first page.
 ```
@@ -175,10 +132,10 @@ for video in actress_object:
 ```python
 from hqporner_api.api import Client
 from hqporner_api.modules.locals import Category
-videos = Client().get_videos_by_category(Category) 
+videos = Client().get_videos_by_category(Category.POV) # example category 
 
 for video in videos:
-    print(video.video_title)
+    print(video.title)
 
 """
 All attributes of the Category class can be found in locals.py
@@ -197,7 +154,7 @@ from hqporner_api.api import Client
 videos = Client().search_videos(query="Search Query")
 
 for video in videos:
-    print(video.video_title)
+    print(video.title)
 ```
 
 ## Get top porn
@@ -205,7 +162,7 @@ for video in videos:
 ```python
 from hqporner_api.api import Client
 from hqporner_api.modules.locals import Sort
-top_porn = Client().get_top_porn(sort_by=Sort) 
+top_porn = Client().get_top_porn(sort_by=Sort.WEEK) # example sorting 
 
 """
 Sort:
@@ -242,7 +199,9 @@ For example, the Pornstar Anissa Kate has currently over 162 videos. If you scro
 those are packed in 4 pages. If no more pages are left, the generator will simply stop and everything's fine.
 One page = 46 videos
 
-# Exceptions
+# Locals
+
+## Exceptions
 
 There are 3 exceptions:
 
@@ -250,7 +209,19 @@ There are 3 exceptions:
 - NoVideosFound    (Raised when no videos were found during a search)
 - InvalidActress   (Raised when an invalid actress was given)
 
+## Quality
 
+The quality class is used for video downloading. It has three attributes:
+
+- Quality.BEST (representing the best quality)
+- Quality.HALF (representing something in the middle)
+- Quality.WORST (representing the worst quality)
+
+! This can also be a string instead of the object like:
+
+- Quality.BEST == `best`
+- Quality.HALF == `half`
+- Quality.WORST == `worst`
 
 
 
