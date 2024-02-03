@@ -1,4 +1,4 @@
-from hqporner_api.api import Client
+from ..api import Client
 
 client = Client()
 query = "Mia Khalifa"
