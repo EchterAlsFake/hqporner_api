@@ -14,7 +14,7 @@ def test_pornstars():
 
 
 def test_video_length():
-    assert isinstance(video.video_length, str) and len(video.video_length) > 0
+    assert isinstance(video.length, str) and len(video.length) > 0
 
 
 def test_categories():
