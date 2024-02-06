@@ -109,7 +109,7 @@ class Video:
         return actress_names
 
     @cached_property
-    def video_length(self) -> str:
+    def length(self) -> str:
         """
         :return: str: The length of the video in h / m / s format
         """

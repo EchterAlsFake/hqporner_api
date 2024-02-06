@@ -20,7 +20,7 @@ a website. Contact me at my E-Mail, and I'll take this Repository immediately of
 
 # Quickstart
 
-### Have a look at the [Documentation](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/DOCUMENTATION.md) for more details
+### Have a look at the [Documentation](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/Documentation.md) for more details
 
 - Install the library with `pip install hqporner_api`
 
@@ -52,13 +52,13 @@ for video in videos:
 ```
 
 # Changelog
-See [Changelog](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/CHANGELOG.md) for more details.
+See [Changelog](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/Changelog.md) for more details.
 
 # Contribution
 Do you see any issues or having some feature requests? Simply open an Issue or talk
 in the discussions.
 
-Pull requests are also welcome, but please avoid bs4 and use regex :) 
+Pull requests are welcome :) 
 
 # License
 Licensed under the LGPLv3 License

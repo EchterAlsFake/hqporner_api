@@ -77,7 +77,7 @@ aren't reloaded. Instead, they are cached. This makes it very efficient.
 |:----------------------|:-------:|:-------------:|
 | .title                |   str   |      Yes      |
 | .pornstars            |  list   |      Yes      |
-| .video_length         |   str   |      Yes      |
+| .length               |   str   |      Yes      |
 | .publish_date         |   str   |      Yes      |
 | .categories           |  list   |      Yes      |
 | .video_qualities      |  list   |      Yes      |
