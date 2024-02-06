@@ -174,6 +174,9 @@ class Video:
         quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}
 
         # Define the quality map
+        if not quals:
+            raise NotAvailable("This video can't be downloaded, because it uses an older HTML player.")
+
         quality_map = {
             Quality.BEST: max(quals, key=lambda x: int(x)),
             Quality.HALF: sorted(quals, key=lambda x: int(x))[len(quals) // 2],
