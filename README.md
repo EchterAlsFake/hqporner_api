@@ -3,6 +3,7 @@
 <div align="center">
     <a href="https://pepy.tech/project/hqporner_api"><img src="https://static.pepy.tech/badge/hqporner_api" alt="Downloads"></a>
     <a href="https://github.com/EchterAlsFake/hqporner_api/workflows/"><img src="https://github.com/EchterAlsFake/hqporner_api/workflows/CodeQL/badge.svg" alt="CodeQL Analysis"/></a>
+    <a href="https://github.com/EchterAlsFake/hqporner_api/workflows/"><img src="https://github.com/EchterAlsFake/hqporner_api/actions/workflows/tests.yml/badge.svg" alt="API Tests"/></a>
 </div>
 
 # Description
@@ -12,7 +13,7 @@ It is optimized for performance and as lightweight as possible.
 
 # Disclaimer
 
-[!IMPORTANT] HQPorner is in violation to HQporner's ToS!
+[!IMPORTANT] HQPorner API is in violation to HQporner's ToS!
 
 Copyright Information: I have no intention of stealing copyright protected content or slowing down
 a website. Contact me at my E-Mail, and I'll take this Repository immediately offline.

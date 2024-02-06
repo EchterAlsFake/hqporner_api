@@ -9,11 +9,10 @@
 ## Table of Contents
 
 - [Installation](#installation)
-- [Dependencies](#dependencies)
 - [Usage](#usage)
 - [Quality](#quality)
 - [Client](#client)
-  - [Video](#basic-video-information)
+  - [Video](#video-attributes)
   - [Videos by Actress](#get-videos-by-actress)
   - [Videos by Category](#get-videos-by-category)
   - [Search for Videos](#search-for-videos)
