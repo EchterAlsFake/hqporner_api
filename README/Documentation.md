@@ -96,8 +96,8 @@ video.download(quality=quality)
 # by default all videos are downloaded to the current working directory.
 # You can change this by specifying an output path:
 
-video.download(quality=quality, output_path="your_path_here")
-
+video.download(quality=quality, output_path="your_path_here + video_tite.mp4")
+# NOTE: The video title isn't automatically assigned to the output path!
 # Custom Callback
 
 # You can define your own callback instead if tqdm. You must make a function that takes pos and total as arguments.

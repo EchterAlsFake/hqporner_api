@@ -36,7 +36,7 @@ video_object = client.get_video("<insert_url_here>")
 
 # Download the video
 
-video_object.download(quality=Quality.BEST, output_path="your_output_path")
+video_object.download(quality=Quality.BEST, output_path="your_output_path + title.mp4")
 
 # Videos by actress
 
