@@ -5,7 +5,7 @@ setup(
     version="1.5",
     packages=find_packages(),
     install_requires=[
-        "requests"
+        "requests", "lxml", "bs4"
     ],
     entry_points={
         'console_scripts': [

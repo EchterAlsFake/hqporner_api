@@ -1,6 +1,6 @@
 # HQPorner API Documentation
 
-> - Version 1.5
+> - Version 1.6
 > - Author: Johannes Habel
 > - Copryight (C) 2024
 > - License: GPL 3
@@ -72,15 +72,22 @@ aren't reloaded. Instead, they are cached. This makes it very efficient.
 
 ## Video Attributes
 
-| Attribute             | Returns |  is cached?   |
-|:----------------------|:-------:|:-------------:|
-| .title                |   str   |      Yes      |
-| .pornstars            |  list   |      Yes      |
-| .length               |   str   |      Yes      |
-| .publish_date         |   str   |      Yes      |
-| .categories           |  list   |      Yes      |
-| .video_qualities      |  list   |      Yes      |
-| .direct_download_urls |  list   |      Yes      |
+| Attribute             | Returns | is cached? |
+|:----------------------|:-------:|:----------:|
+| .title                |   str   |    Yes     |
+| .pornstars            |  list   |    Yes     |
+| .length               |   str   |    Yes     |
+| .publish_date         |   str   |    Yes     |
+| .categories           |  list   |    Yes     |
+| .video_qualities      |  list   |    Yes     |
+| .direct_download_urls |  list   |    Yes     |
+| .get_thumbnails       |  list   |     No     |
+
+### Thumbnails
+
+The .get_thumbnails() function from the video objects will return a list.
+<br>The list contains 11 items. The first one is the thumbnail, and the 10 others
+<br>are the thumbnails you see when you hover of the video.
 
 ## Download a video
 
@@ -102,7 +109,7 @@ video.download(quality=quality, output_path="your_path_here + video_tite.mp4")
 
 # You can define your own callback instead if tqdm. You must make a function that takes pos and total as arguments.
 # This will disable tqdm
-def custom_callback(self, downloaded, total):
+def custom_callback(downloaded, total):
     """This is an example of how you can implement the custom callback"""
 
     percentage = (downloaded / total) * 100
@@ -115,7 +122,7 @@ def custom_callback(self, downloaded, total):
 ```python
 from hqporner_api.api import Client
 
-actress_object = Client().get_videos_by_actress("<actress-name>") 
+actress_object = Client().get_videos_by_actress("<actress-name>") # or URL
 # You can also enter an actress URl e.g hqporner.com/actress/...
 
 # You can now iterate through all videos from an actress:

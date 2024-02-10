@@ -1,8 +1,9 @@
 import os
 import string
-from functools import cached_property, wraps
+from functools import cached_property
 from random import choice
-from typing import Any, Generator, Callable
+from typing import Generator
+from bs4 import BeautifulSoup
 
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.errors import *
@@ -10,59 +11,42 @@ from hqporner_api.modules.functions import *
 from hqporner_api.modules.progress_bars import *
 
 
-def validate_url(func: Callable):
-    @wraps(func)
-    def wrapper(self, url, *args, **kwargs) -> Any:
-        if check_url(url):
-            return func(self, url, *args, **kwargs)
+class Checks:
+    """
+    Does the same as the decorators, but decorators are not good for IDEs because they get confused.
+    So I moved them here.
+    """
+
+    @classmethod
+    def check_url(cls, url: str):
+        match = PATTERN_CHECK_URL.match(url)
+        if match:
+            return url
+
         else:
             raise InvalidURL
-    return wrapper
 
+    @classmethod
+    def check_actress(cls, actress: str):
+        if actress.startswith("https://"):
+            match = PATTERN_CHECK_URL_ACTRESS.match(actress)
+            if match:
+                name_extraction = re.compile(r'https://hqporner.com/actress/(.+)')
+                name = name_extraction.search(actress).group(1)
+                return name
 
-def validate_actress(func: Callable):
-    @wraps(func)
-    def wrapper(self, actress,  *args, **kwargs) -> Callable:
-        if check_actress(actress):
-            return func(self, actress, *args, **kwargs)
-
-        else:
-            raise InvalidActress
-
-    return wrapper
-
-
-def validate_category(func: Callable):
-    @wraps(func)
-    def wrapper(self, category: Category, *args,  **kwargs):
-        if check_category(category):
-            return func(self, category, *args, **kwargs)
+            else:
+                raise InvalidActress
 
         else:
-            raise InvalidCategory
+            return actress
 
-    return wrapper
+            # I assume that if it's not a URL, the user was smart enough to enter just the name lol
 
 
 class Video:
-    """
-    Creates a Video object, which can be used to retrieve information of a HQPorner video and download it.
-    """
-    @validate_url
     def __init__(self, url):
-        """
-        Initialize a new Video instance.
-
-        This method takes a URL, validates it, and then fetches the HTML content of the web page at that URL.
-
-        Args:
-            url (str): A URL string pointing to a video. The URL should be valid and accessible.
-
-        Attributes:
-            url (str): The URL of the video.
-            html_content (str): The HTML content of the web page at the provided URL.
-        """
-        self.url = url
+        self.url = Checks().check_url(url)
         self.html_content = requests.get(url=self.url, headers=headers).content.decode("utf-8")
 
     @classmethod
@@ -185,8 +169,6 @@ class Video:
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
-        title = self.strip_title(self.title)
-
         response = requests.get(download_url, stream=True)
         file_size = int(response.headers.get('content-length', 0))
 
@@ -220,29 +202,61 @@ class Video:
         cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
         return cleaned_title
 
+    def get_thumbnails(self):
+        """
+        Note: This function is very bad optimized, but there's no other way. This is also the reason why it's not cached
+        The first item in the index is the base thumbnail.
+        """
+
+        id_from_url_pattern = re.compile("hqporner.com/hdporn/(.*?)-")
+        id = id_from_url_pattern.search(self.url).group(1)
+        title = self.title
+        urls = []
+        scripts_under_divs = []
+        script = None
+
+        query = title.replace(" ", "+")
+        html_content = requests.get(url=f"{root_url}/?q={query}").content.decode("utf-8")
+        soup = BeautifulSoup(html_content, 'lxml')
+        divs = soup.find_all('div', class_='row')
+
+        for div in divs:
+            scripts = div.find_all('script')
+            scripts_under_divs.extend(scripts)
+
+        pattern = re.compile(r'"(//[^"]+)"')
+        for script in scripts_under_divs:
+            if f"preload_{id}" in script.text:
+                script = script.text
+                break
+
+        urls_ = pattern.findall(script)
+        main_thumbnail = urls_[0].replace("_1.jpg", "_main.jpg")
+        urls.append("https:" + main_thumbnail)
+        for url in urls_:
+            urls.append("https:" + url)
+
+        return urls
+
 
 class Client:
 
-    @validate_url
-    def get_video(self, url: str) -> Video:
+    @classmethod
+    def get_video(cls, url: str) -> Video:
         """
         :param url:
         :return: Video object
         """
         return Video(url)
 
-    @validate_actress
-    def get_videos_by_actress(self, name: str, pages: int = 5) -> Generator[Video, None, None]:
+    @classmethod
+    def get_videos_by_actress(cls, name: str, pages: int = 5) -> Generator[Video, None, None]:
         """
         :param name:
         :param pages: int: one page contains 46 videos
         :return:
         """
-        match = re.search("hqporner.com/actress/(.+)", name)
-        if match:
-            name = match.group(1)
-
-        name = name.replace(" ", "-")
+        name = Checks().check_actress(name)
         for page in range(1, int(pages + 1)):
             final_url = f"{root_url_actress}{name}/{page}"
             html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
@@ -255,8 +269,8 @@ class Client:
                 if PATTERN_CHECK_URL.match(url):
                     yield Video(url)
 
-    @validate_category
-    def get_videos_by_category(self, category: Category, pages=5) -> Generator[Video, None, None]:
+    @classmethod
+    def get_videos_by_category(cls, category: Category, pages=5) -> Generator[Video, None, None]:
         """
         :param category: Category: The video category
         :param pages: int: one page contains 46 videos
@@ -352,3 +366,6 @@ class Client:
                 urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url_ in urls:
                     yield Video(f"{root_url}hdporn/{url_}")
+url = "https://hqporner.com/hdporn/99748-exercise_bike_Mila_Azul.html"
+video = Video(url)
+video.get_thumbnails()

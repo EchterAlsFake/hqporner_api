@@ -29,7 +29,8 @@ def test_direct_download_url():
     assert isinstance(video.direct_download_urls, list) and len(video.direct_download_urls) > 0
 
 
-
+def test_thumbnails():
+    assert isinstance(video.get_thumbnails(), list) and len(video.get_thumbnails()) == 11
 
 
 
