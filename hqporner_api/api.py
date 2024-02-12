@@ -366,6 +366,3 @@ class Client:
                 urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url_ in urls:
                     yield Video(f"{root_url}hdporn/{url_}")
-url = "https://hqporner.com/hdporn/99748-exercise_bike_Mila_Azul.html"
-video = Video(url)
-video.get_thumbnails()
