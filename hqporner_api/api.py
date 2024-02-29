@@ -9,6 +9,8 @@ from hqporner_api.modules.errors import *
 from hqporner_api.modules.functions import *
 from hqporner_api.modules.progress_bars import *
 
+from base_api.base import Core
+
 
 def validate_url(func: Callable):
     @wraps(func)
@@ -63,22 +65,7 @@ class Video:
             html_content (str): The HTML content of the web page at the provided URL.
         """
         self.url = url
-        self.html_content = requests.get(url=self.url, headers=headers).content.decode("utf-8")
-
-    @classmethod
-    def fix_quality(cls, quality):
-        if isinstance(quality, Quality):
-            return quality
-
-        else:
-            if str(quality) == "best":
-                return Quality.BEST
-
-            elif str(quality) == "half":
-                return Quality.HALF
-
-            elif str(quality) == "worst":
-                return Quality.WORST
+        self.html_content = Core().get_content(url=url, headers=headers).decode("utf-8")
 
     @cached_property
     def title(self) -> str:
@@ -167,7 +154,7 @@ class Video:
         :param callback:
         :return:
         """
-        quality = self.fix_quality(quality)
+        quality = Core().fix_quality(quality)
 
         cdn_urls = self.direct_download_urls
         quals = self.video_qualities
@@ -175,7 +162,7 @@ class Video:
 
         # Define the quality map
         if not quals:
-            raise NotAvailable("This video can't be downloaded, because it uses an older HTML player.")
+            raise NotAvailable
 
         quality_map = {
             Quality.BEST: max(quals, key=lambda x: int(x)),
@@ -185,7 +172,6 @@ class Video:
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
-        title = self.strip_title(self.title)
 
         response = requests.get(download_url, stream=True)
         file_size = int(response.headers.get('content-length', 0))
@@ -245,7 +231,7 @@ class Client:
         name = name.replace(" ", "-")
         for page in range(1, int(pages + 1)):
             final_url = f"{root_url_actress}{name}/{page}"
-            html_content = requests.get(final_url, headers=headers).content.decode("utf-8")
+            html_content = Core().get_content(final_url).decode("utf-8")
             if not check_for_page(html_content):
                 break
 
@@ -263,7 +249,7 @@ class Client:
         :return:
         """
         for page in range(1, int(pages + 1)):
-            html_content = requests.get(url=f"{root_url_category}{category}/{page}").content.decode("utf-8")
+            html_content = Core().get_content(f"{root_url_category}{category}/{page}").decode("utf-8")
             if not check_for_page(html_content):
                 break
 
@@ -280,14 +266,14 @@ class Client:
         :return:
         """
         query = query.replace(" ", "+")
-        html_content = requests.get(url=f"{root_url}/?q={query}").content.decode("utf-8")
+        html_content = Core().get_content(f"{root_url}/?q={query}").decode("utf-8")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise NoVideosFound
 
         else:
             for page in range(1, int(pages + 1)):
-                html_content = requests.get(url=f"{root_url}/?q={query}&p={page}").content.decode("utf-8")
+                html_content = Core().get_content(f"{root_url}/?q={query}&p={page}").decode("utf-8")
                 if not check_for_page(html_content):
                     break
 
@@ -305,10 +291,10 @@ class Client:
         """
         for page in range(1, int(pages + 1)):
             if sort_by == "all_time":
-                html_content = requests.get(f"{root_url_top}{page}", headers=headers).content.decode("utf-8")
+                html_content = Core().get_content(f"{root_url_top}{page}", headers=headers).decode("utf-8")
 
             else:
-                html_content = requests.get(f"{root_url_top}{sort_by}/{page}", headers=headers).content.decode("utf-8")
+                html_content = Core().get_content(f"{root_url_top}{sort_by}/{page}", headers=headers).decode("utf-8")
 
             if not check_for_page(html_content):
                 break
@@ -323,7 +309,7 @@ class Client:
         """
         :return: list: Returns all categories of HQporner as a list of strings
         """
-        html_content = requests.get("https://hqporner.com/categories", headers=headers).content.decode("utf-8")
+        html_content = Core().get_content("https://hqporner.com/categories", headers=headers).decode("utf-8")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
@@ -332,7 +318,7 @@ class Client:
         """
         :return: Video object (random video from HQPorner)
         """
-        html_content = requests.get(root_random, headers=headers).content.decode("utf-8")
+        html_content = Core().get_content(root_random, headers=headers).decode("utf-8")
         videos = PATTERN_VIDEOS_ON_SITE.findall(html_content)
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}")
@@ -344,7 +330,7 @@ class Client:
         :return:
         """
         for page in range(1, int(pages + 1)):
-            html_content = requests.get(url=f"{root_brazzers}/{page}").content.decode("utf-8")
+            html_content = Core().get_content(url=f"{root_brazzers}/{page}").decode("utf-8")
             if not check_for_page(html_content):
                 break
 

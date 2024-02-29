@@ -20,4 +20,4 @@ class InvalidURL(Exception):
 
 class NotAvailable(Exception):
     def __init__(self, msg):
-        self.msg = msg
+        self.msg = "The video is unvailable, this is an error from HQPorner itself"
