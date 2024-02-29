@@ -5,7 +5,7 @@ setup(
     version="1.6.1",
     packages=find_packages(),
     install_requires=[
-        "requests", "lxml", "bs4"
+        "requests", "lxml", "bs4", "eaf_base_api"
     ],
     entry_points={
         'console_scripts': [
