@@ -2,14 +2,6 @@
 Some objects you can use for the HQPorner API.
 """
 
-from enum import Enum
-
-
-class Quality(Enum):
-    BEST = 'BEST'
-    HALF = 'HALF'
-    WORST = 'WORST'
-
 
 class Sort:
     ALL_TIME = "all-time"

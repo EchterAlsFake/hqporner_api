@@ -11,7 +11,7 @@ from hqporner_api.modules.functions import *
 from hqporner_api.modules.progress_bars import *
 
 from base_api.base import Core
-
+from base_api.modules.quality import Quality
 
 class Checks:
     """
