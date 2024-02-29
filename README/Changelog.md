@@ -53,3 +53,8 @@ I recommend reading through the documentation, as some usages have changed.
 # 1.5
 
 - You can now pass a string to the quality argument instead of the object
+
+# 1.6
+- changed some stuff in the code
+- fixed actress function
+- you can now get the thumbnails from videos

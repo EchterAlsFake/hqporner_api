@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name="hqporner_api",
-    version="1.5",
+    version="1.6.1",
     packages=find_packages(),
     install_requires=[
-        "requests"
+        "requests", "lxml", "bs4"
     ],
     entry_points={
         'console_scripts': [

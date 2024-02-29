@@ -9,11 +9,10 @@
 # Description
 
 HQPorner API is an API for HQPorner. It allows you to fetch information from videos using regexes and requests.
-It is optimized for performance and as lightweight as possible.
 
 # Disclaimer
 
-[!IMPORTANT] HQPorner API is in violation to HQporner's ToS!
+> [!IMPORTANT] HQPorner API is in violation to HQporner's ToS!
 
 Copyright Information: I have no intention of stealing copyright protected content or slowing down
 a website. Contact me at my E-Mail, and I'll take this Repository immediately offline.
