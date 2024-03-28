@@ -1,26 +1,29 @@
 import os
-import string
+
 from functools import cached_property
 from random import choice
 from typing import Generator
 from bs4 import BeautifulSoup
-
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.functions import *
 from hqporner_api.modules.progress_bars import *
-
 from base_api.base import Core
 from base_api.modules.quality import Quality
 
+
 class Checks:
     """
-    Does the same as the decorators, but decorators are not good for IDEs because they get confused.
-    So I moved them here.
+    Does the same as the decorators, but decorators are not good for IDEs because they get confused, so I moved
+    them here.
     """
 
     @classmethod
     def check_url(cls, url: str):
+        """
+        :param url: (str) The URL of the video to check for
+        :return: (str) The URL if the URL is valid, otherwise raises InvalidURL
+        """
         match = PATTERN_CHECK_URL.match(url)
         if match:
             return url
@@ -30,6 +33,10 @@ class Checks:
 
     @classmethod
     def check_actress(cls, actress: str):
+        """
+        :param: actress: (str) The name or URL of the actress to check for
+        :return: (str) The name of the actress if valid, otherwise raises InvalidActress Exception
+        """
         if actress.startswith("https://"):
             match = PATTERN_CHECK_URL_ACTRESS.match(actress)
             if match:
@@ -41,6 +48,7 @@ class Checks:
                 raise InvalidActress
 
         else:
+            actress = actress.replace(" ", "-")  # For later url processing (makes sense, trust me)
             return actress
 
             # I assume that if it's not a URL, the user was smart enough to enter just the name lol
@@ -48,67 +56,85 @@ class Checks:
 
 class Video:
     def __init__(self, url):
+        """
+        :param url: (str) The URL of the video
+        """
         self.url = Checks().check_url(url)
         self.html_content = Core().get_content(url=url, headers=headers).decode("utf-8")
 
     @cached_property
     def title(self) -> str:
         """
-        :return: str: The video title (lowercase)
+        :return: (str) The video title (lowercase)
         """
         match = PATTERN_TITLE.search(self.html_content)
         if match:
             title = match.group(1)
             return title
 
+        else:
+            raise WeirdError
+
     @cached_property
     def cdn_url(self) -> str:
         """
-        :return: str: The Content Delivery Network URL for the video
+        :return: (str) The Content Delivery Network URL for the video (can be used to embed the video)
         """
         match = PATTERN_CDN_URL.search(self.html_content)
         if match:
             url_path = match.group(1)
             return url_path
 
+        else:
+            raise WeirdError
+
     @cached_property
     def pornstars(self) -> list:
         """
-        :return: list: The list of pornstars featured in the video
+        :return: (list) The list of pornstars featured in the video
         """
-        actress_names = PATTERN_ACTRESS.findall(self.html_content)
-        return actress_names
+        return PATTERN_ACTRESS.findall(self.html_content)  # There are videos where no pornstars are listed, so can be 0
 
     @cached_property
     def length(self) -> str:
         """
-        :return: str: The length of the video in h / m / s format
+        :return: (str) The length of the video in h / m / s format
         """
         match = PATTERN_VIDEO_LENGTH.search(self.html_content)
         if match:
             return match.group(1)
 
+        else:
+            raise WeirdError
+
     @cached_property
     def publish_date(self) -> str:
         """
-        :return: str: How many months ago the video was uploaded
+        :return: (str) How many months ago the video was uploaded
         """
         match = PATTERN_PUBLISH_DATE.search(self.html_content)
         if match:
             return match.group(1)
 
+        else:
+            raise WeirdError
+
     @cached_property
     def categories(self) -> list:
         """
-        :return: list: A list of categories featured in this video
+        :return: (list) A list of categories featured in this video
         """
         categories = PATTERN_CATEGORY.findall(self.html_content)
-        return categories
+        if len(categories) > 0:
+            return categories
+
+        else:
+            raise WeirdError
 
     @cached_property
     def video_qualities(self) -> list:
         """
-        :return: list: The available qualities of the video
+        :return: (list) The available qualities of the video
         """
         quals = self.direct_download_urls
         qualities = set()  # Using a set to avoid duplicates
@@ -123,7 +149,7 @@ class Video:
     @cached_property
     def direct_download_urls(self) -> list:
         """
-        :return: list: The direct download urls for all available qualities
+        :return: (list) The direct download urls for all available qualities
         """
         cdn_url = f"https://{self.cdn_url}"
         html_content = Core().get_content(url=cdn_url, headers=headers).decode("utf-8")
@@ -134,9 +160,8 @@ class Video:
         """
         :param quality:
         :param output_path:
-        :param no_title:
         :param callback:
-        :return:
+        :return: (bool)
         """
         quality = Core().fix_quality(quality)
 
@@ -179,20 +204,14 @@ class Video:
             if not callback:
                 del progress_bar
 
-    @classmethod
-    def strip_title(cls, title: str) -> str:
-        """
-        :param title:
-        :return: str: strips out non UTF-8 chars of the title
-        """
-        illegal_chars = '<>:"/\\|?*'
-        cleaned_title = ''.join([char for char in title if char in string.printable and char not in illegal_chars])
-        return cleaned_title
+            return True
 
-    def get_thumbnails(self):
+        else:
+            raise FileExistsError("The video already exists.")
+
+    def get_thumbnails(self) -> list:
         """
-        Note: This function is very bad optimized, but there's no other way. This is also the reason why it's not cached
-        The first item in the index is the base thumbnail.
+        :return: (list) First item = Thumbnail, others = Preview
         """
 
         id_from_url_pattern = re.compile("hqporner.com/hdporn/(.*?)-")
@@ -231,7 +250,7 @@ class Client:
     @classmethod
     def get_video(cls, url: str) -> Video:
         """
-        :param url:
+        :param url: The video URL
         :return: Video object
         """
         return Video(url)
@@ -239,9 +258,9 @@ class Client:
     @classmethod
     def get_videos_by_actress(cls, name: str, pages: int = 5) -> Generator[Video, None, None]:
         """
-        :param name:
+        :param name: The actress name or the URL
         :param pages: int: one page contains 46 videos
-        :return:
+        :return: Video object
         """
         name = Checks().check_actress(name)
         for page in range(1, int(pages + 1)):
@@ -261,7 +280,7 @@ class Client:
         """
         :param category: Category: The video category
         :param pages: int: one page contains 46 videos
-        :return:
+        :return: Video object
         """
         for page in range(1, int(pages + 1)):
             html_content = Core().get_content(url=f"{root_url_category}{category}/{page}", headers=headers).decode("utf-8")
@@ -278,7 +297,7 @@ class Client:
         """
         :param query:
         :param pages: int: one page contains 46 videos
-        :return:
+        :return: Video object
         """
         query = query.replace(" ", "+")
         html_content = Core().get_content(url=f"{root_url}/?q={query}", headers=headers).decode("utf-8")
@@ -302,7 +321,7 @@ class Client:
         """
         :param pages: int: one page contains 46 videos
         :param sort_by: all_time, month, week
-        :return:
+        :return: Video object
         """
         for page in range(1, int(pages + 1)):
             if sort_by == "all_time":
@@ -322,7 +341,7 @@ class Client:
     @classmethod
     def get_all_categories(cls) -> list:
         """
-        :return: list: Returns all categories of HQporner as a list of strings
+        :return: (list) Returns all categories of HQporner as a list of strings
         """
         html_content = Core().get_content("https://hqporner.com/categories", headers=headers).decode("utf-8")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
@@ -342,7 +361,7 @@ class Client:
     def get_brazzers_videos(cls, pages=5) -> Generator[Video, None, None]:
         """
         :param pages: int: one page contains 46 videos
-        :return:
+        :return: Video object
         """
         for page in range(1, int(pages + 1)):
             html_content = Core().get_content(url=f"{root_brazzers}/{page}", headers=headers).decode("utf-8")

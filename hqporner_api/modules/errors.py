@@ -19,5 +19,10 @@ class InvalidURL(Exception):
 
 
 class NotAvailable(Exception):
-    def __init__(self, msg):
-        self.msg = "The video is unvailable, this is an error from HQPorner itself"
+    def __init__(self):
+        self.msg = "The video is unavailable, because the CDN network which saves the videos has an issue"
+
+
+class WeirdError(Exception):
+    def __init__(self):
+        self.msg = "This is an unexpected error. If you see this, please report it on GitHub, thanks :)"

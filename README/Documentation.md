@@ -2,9 +2,9 @@
 
 > - Version 1.6
 > - Author: Johannes Habel
-> - Copryight (C) 2024
-> - License: GPL 3
-> - Dependencies: requests,
+> - Copyright (C) 2024
+> - License: LGPLv3
+> - Dependencies: requests, beautifulsoup (bs4), eaf_base_api
 
 ## Table of Contents
 
@@ -36,8 +36,8 @@ Or Install directly from GitHub
 `pip install git+https://github.com/EchterAlsFake/hqporner_api`
 
 # Important Notice
-The ToS of hqporner.com clearly say, that using scrapers / bots isn't allowed.
-> Using this API is on your risk. I am not liable for your actions!
+The ToS of hqporner.com clearly say that using scrapers / bots isn't allowed.
+> Using this API is at your risk. I am not liable for your actions!
 
 
 # Usage
@@ -202,14 +202,14 @@ brazzers_videos = Client().get_brazzers_videos(pages=int) # Returns brazzers vid
 
 Some methods have a `pages` argument. This argument defines over how many pages the script iterates on HQPorner.
 For example, the Pornstar Anissa Kate has currently over 162 videos. If you scroll down, you can see that
-those are packed in 4 pages. If no more pages are left, the generator will simply stop and everything's fine.
+those are packed in four pages. If no more pages are left, the generator will simply stop and everything's fine.
 One page = 46 videos
 
 # Locals
 
 ## Exceptions
 
-There are 3 exceptions:
+There are three exceptions:
 
 - InvalidCategory  (Raised when a category is invalid)
 - NoVideosFound    (Raised when no videos were found during a search)

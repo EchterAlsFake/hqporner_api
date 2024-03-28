@@ -12,11 +12,9 @@ HQPorner API is an API for HQPorner. It allows you to fetch information from vid
 
 # Disclaimer
 
-> [!IMPORTANT] HQPorner API is in violation to HQporner's ToS!
-
-Copyright Information: I have no intention of stealing copyright protected content or slowing down
-a website. Contact me at my E-Mail, and I'll take this Repository immediately offline.
-
+> [!IMPORTANT] 
+> HQPorner API is in violation to HQporner's ToS!
+> If you are the website owner of hqporner.com, contact me at my E-Mail, and I'll take this repository immediately offline.
 
 # Quickstart
 
@@ -34,11 +32,9 @@ client = Client()
 video_object = client.get_video("<insert_url_here>")
 
 # Download the video
-
 video_object.download(quality=Quality.BEST, output_path="your_output_path + title.mp4")
 
 # Videos by actress
-
 actress_generator = client.get_videos_by_actress("anissa-kate")
 for video in actress_generator:
     print(video.title) # etc...
@@ -64,9 +60,5 @@ Pull requests are welcome :)
 Licensed under the LGPLv3 License
 
 Copyright (C) 2023–2024 Johannes Habel
-
-# Support
-
-Leave a star on the repository. That's enough :) 
 
 
