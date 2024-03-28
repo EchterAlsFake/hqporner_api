@@ -353,7 +353,7 @@ class Client:
         :return: Video object (random video from HQPorner)
         """
         html_content = Core().get_content(root_random, headers=headers).decode("utf-8")
-        videos = PATTERN_VIDEOS_ON_SITE.findall(html_content)
+        videos = PATTERN_VIDEOS_ON_SITE_ALT.findall(html_content)
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}")
 

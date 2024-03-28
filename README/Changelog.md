@@ -58,3 +58,9 @@ I recommend reading through the documentation, as some usages have changed.
 - changed some stuff in the code
 - fixed actress function
 - you can now get the thumbnails from videos
+
+# 1.6.1-1.6.5
+- fixed stuff
+- code refactoring
+- typo fixes
+- idk
