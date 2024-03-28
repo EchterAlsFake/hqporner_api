@@ -15,6 +15,7 @@ HQPorner API is an API for HQPorner. It allows you to fetch information from vid
 > [!IMPORTANT] 
 > HQPorner API is in violation to HQporner's ToS!
 > If you are the website owner of hqporner.com, contact me at my E-Mail, and I'll take this repository immediately offline.
+> EchterAlsFake@proton.me
 
 # Quickstart
 
