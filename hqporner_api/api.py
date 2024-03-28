@@ -300,14 +300,15 @@ class Client:
         :return: Video object
         """
         query = query.replace(" ", "+")
-        html_content = Core().get_content(url=f"{root_url}/?q={query}", headers=headers).decode("utf-8")
+        html_content = Core().get_content(url=f"{root_url}?q={query}", headers=headers).decode("utf-8")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise NoVideosFound
 
         else:
             for page in range(1, int(pages + 1)):
-                html_content = Core().get_content(url=f"{root_url}/?q={query}&p={page}", headers=headers).decode("utf-8")
+                html_content = Core().get_content(url=f"{root_url}?q={query}&p={page}", headers=headers).decode("utf-8")
+                print(f"{root_url}?q={query}&p={page}")
                 if not check_for_page(html_content):
                     break
 
