@@ -156,10 +156,10 @@ class Video:
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
-    def download(self, quality, output_path="./", callback=None):
+    def download(self, quality, path="./", callback=None):
         """
         :param quality:
-        :param output_path:
+        :param path:
         :param callback:
         :return: (bool)
         """
@@ -189,8 +189,8 @@ class Video:
 
         downloaded_so_far = 0
 
-        if not os.path.exists(output_path):
-            with open(output_path, 'wb') as file:
+        if not os.path.exists(path):
+            with open(path, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=1024):
                     file.write(chunk)
                     downloaded_so_far += len(chunk)
