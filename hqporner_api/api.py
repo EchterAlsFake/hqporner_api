@@ -308,7 +308,6 @@ class Client:
         else:
             for page in range(1, int(pages + 1)):
                 html_content = Core().get_content(url=f"{root_url}?q={query}&p={page}", headers=headers).decode("utf-8")
-                print(f"{root_url}?q={query}&p={page}")
                 if not check_for_page(html_content):
                     break
 

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="hqporner_api",
-    version="1.6.3",
+    version="1.6.4",
     packages=find_packages(),
     install_requires=[
         "requests", "lxml", "bs4", "eaf_base_api"
