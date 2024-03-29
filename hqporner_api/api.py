@@ -1,5 +1,3 @@
-import os
-
 from functools import cached_property
 from random import choice
 from typing import Generator
@@ -7,9 +5,9 @@ from bs4 import BeautifulSoup
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.functions import *
-from hqporner_api.modules.progress_bars import *
 from base_api.base import Core
 from base_api.modules.quality import Quality
+from base_api.modules.download import legacy_download
 
 
 class Checks:
@@ -181,33 +179,7 @@ class Video:
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
-        response = requests.get(download_url, stream=True)
-        file_size = int(response.headers.get('content-length', 0))
-
-        if callback is None:
-            progress_bar = Callback()
-
-        downloaded_so_far = 0
-
-        if not os.path.exists(path):
-            with open(path, 'wb') as file:
-                for chunk in response.iter_content(chunk_size=1024):
-                    file.write(chunk)
-                    downloaded_so_far += len(chunk)
-
-                    if callback:
-                        callback(downloaded_so_far, file_size)
-
-                    else:
-                        progress_bar.text_progress_bar(downloaded=downloaded_so_far, total=file_size)
-
-            if not callback:
-                del progress_bar
-
-            return True
-
-        else:
-            raise FileExistsError("The video already exists.")
+        legacy_download(stream=True, url=download_url, path=path, callback=callback)
 
     def get_thumbnails(self) -> list:
         """
