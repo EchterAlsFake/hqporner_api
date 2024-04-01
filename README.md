@@ -33,7 +33,7 @@ client = Client()
 video_object = client.get_video("<insert_url_here>")
 
 # Download the video
-video_object.download(quality=Quality.BEST, output_path="your_output_path + title.mp4")
+video_object.download(quality=Quality.BEST, path="your_output_path + title.mp4")
 
 # Videos by actress
 actress_generator = client.get_videos_by_actress("anissa-kate")
