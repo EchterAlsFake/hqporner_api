@@ -8,7 +8,7 @@ setup(
         "requests", "lxml", "bs4", "eaf_base_api"
     ],
     entry_points={
-        'console_scripts': [
+        'console_scripts': ['hqporner_api=hqporner_api.api:main'
             # If you want to create any executable scripts
         ],
     },

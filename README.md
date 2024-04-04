@@ -48,6 +48,9 @@ for video in videos:
 # SEE DOCUMENTATION FOR MORE
 ```
 
+> [!NOTE]
+> XVideos API can also be used from the command line. Do: xvideos_api -h to see the options
+
 # Changelog
 See [Changelog](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/Changelog.md) for more details.
 
