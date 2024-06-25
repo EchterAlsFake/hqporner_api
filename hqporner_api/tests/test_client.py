@@ -5,7 +5,7 @@ client = Client()
 
 
 def test_get_top_porn_all_time():
-    top_porn_all = client.get_top_porn(sort_by=Sort.ALL_TIME, pages=1)
+    top_porn_all = client.get_top_porn(sort_by=Sort.ALL_TIME)
 
     for idx, video in enumerate(top_porn_all):
         assert isinstance(video.title, str) and len(video.title) > 0
@@ -13,7 +13,7 @@ def test_get_top_porn_all_time():
             break
 
 def test_get_top_porn_week():
-    top_porn_week = client.get_top_porn(sort_by=Sort.WEEK, pages=1)
+    top_porn_week = client.get_top_porn(sort_by=Sort.WEEK)
 
     for idx, video in enumerate(top_porn_week):
         assert isinstance(video.title, str) and len(video.title) > 0
@@ -22,7 +22,7 @@ def test_get_top_porn_week():
 
 
 def test_get_top_porn_month():
-    top_porn_month = client.get_top_porn(sort_by=Sort.MONTH, pages=1)
+    top_porn_month = client.get_top_porn(sort_by=Sort.MONTH)
 
     for idx, video in enumerate(top_porn_month):
         assert isinstance(video.title, str) and len(video.title) > 0
@@ -45,7 +45,7 @@ def test_get_videos_by_category():
 
     categories = client.get_all_categories()
     for idx, category in enumerate(categories):
-        videos = client.get_videos_by_category(pages=1, category=category)
+        videos = client.get_videos_by_category(category=category)
         for idx, video in enumerate(videos):
             assert isinstance(video.title, str) and len(video.title) > 0
             if idx == 1:
@@ -54,9 +54,8 @@ def test_get_videos_by_category():
 
 def test_get_videos_by_actress():
     name = "anissa-kate"
-    pages = 2
 
-    actress = client.get_videos_by_actress(name, pages)
+    actress = client.get_videos_by_actress(name)
     for idx, video in enumerate(actress):
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:
@@ -64,9 +63,7 @@ def test_get_videos_by_actress():
 
 
 def test_get_brazzers_videos():
-    pages = 2
-
-    videos = client.get_brazzers_videos(pages)
+    videos = client.get_brazzers_videos()
     for idx, video in enumerate(videos):
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:

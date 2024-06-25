@@ -230,14 +230,13 @@ class Client:
         return Video(url)
 
     @classmethod
-    def get_videos_by_actress(cls, name: str, pages: int = 5) -> Generator[Video, None, None]:
+    def get_videos_by_actress(cls, name: str) -> Generator[Video, None, None]:
         """
         :param name: The actress name or the URL
-        :param pages: int: one page contains 46 videos
         :return: Video object
         """
         name = Checks().check_actress(name)
-        for page in range(1, int(pages + 1)):
+        for page in range(100):
             final_url = f"{root_url_actress}{name}/{page}"
             html_content = Core().get_content(final_url, headers=headers).decode("utf-8")
             if not check_for_page(html_content):
@@ -250,13 +249,12 @@ class Client:
                     yield Video(url)
 
     @classmethod
-    def get_videos_by_category(cls, category: Category, pages=5) -> Generator[Video, None, None]:
+    def get_videos_by_category(cls, category: Category) -> Generator[Video, None, None]:
         """
         :param category: Category: The video category
-        :param pages: int: one page contains 46 videos
         :return: Video object
         """
-        for page in range(1, int(pages + 1)):
+        for page in range(100):
             html_content = Core().get_content(url=f"{root_url_category}{category}/{page}", headers=headers).decode("utf-8")
             if not check_for_page(html_content):
                 break
@@ -267,10 +265,9 @@ class Client:
                     yield Video(f"{root_url}hdporn/{url}")
 
     @classmethod
-    def search_videos(cls, query: str, pages: int = 5) -> Generator[Video, None, None]:
+    def search_videos(cls, query: str) -> Generator[Video, None, None]:
         """
         :param query:
-        :param pages: int: one page contains 46 videos
         :return: Video object
         """
         query = query.replace(" ", "+")
@@ -280,7 +277,7 @@ class Client:
             raise NoVideosFound
 
         else:
-            for page in range(1, int(pages + 1)):
+            for page in range(100):
                 html_content = Core().get_content(url=f"{root_url}?q={query}&p={page}", headers=headers).decode("utf-8")
                 if not check_for_page(html_content):
                     break
@@ -291,13 +288,12 @@ class Client:
                         yield Video(f"{root_url}hdporn/{url}")
 
     @classmethod
-    def get_top_porn(cls, sort_by: Sort, pages: int = 5) -> Generator[Video, None, None]:
+    def get_top_porn(cls, sort_by: Sort) -> Generator[Video, None, None]:
         """
-        :param pages: int: one page contains 46 videos
         :param sort_by: all_time, month, week
         :return: Video object
         """
-        for page in range(1, int(pages + 1)):
+        for page in range(100):
             if sort_by == "all_time":
                 html_content = Core().get_content(f"{root_url_top}{page}", headers=headers).decode("utf-8")
 
@@ -332,12 +328,11 @@ class Client:
         return Video(f"{root_url}hdporn/{video}")
 
     @classmethod
-    def get_brazzers_videos(cls, pages=5) -> Generator[Video, None, None]:
+    def get_brazzers_videos(cls) -> Generator[Video, None, None]:
         """
-        :param pages: int: one page contains 46 videos
         :return: Video object
         """
-        for page in range(1, int(pages + 1)):
+        for page in range(100):
             html_content = Core().get_content(url=f"{root_brazzers}/{page}", headers=headers).decode("utf-8")
             if not check_for_page(html_content):
                 break
