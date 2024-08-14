@@ -45,9 +45,8 @@ The ToS of hqporner.com clearly say that using scrapers / bots isn't allowed.
 Import HQPorner API like in the example below:
 
 ```python
-from hqporner_api.api import Client, Quality, Video
-from hqporner_api.modules.errors import InvalidCategory, NoVideosFound, InvalidActress
-from hqporner_api.modules.locals import *
+from hqporner_api import Client, Quality, Video
+from hqporner_api import locals, errors
 ```
 
 # Client
@@ -93,7 +92,7 @@ The .get_thumbnails() function from the video objects will return a list.
 
 
 ```python
-from hqporner_api.api import Client, Quality
+from hqporner_api import Client, Quality
 client = Client()
 video = client.get_video("<video_url>")
 quality = Quality.BEST # Best quality as an example
@@ -120,7 +119,7 @@ def custom_callback(downloaded, total):
 ## Get videos by actress
 
 ```python
-from hqporner_api.api import Client
+from hqporner_api import Client
 
 actress_object = Client().get_videos_by_actress("<actress-name>") # or URL
 # You can also enter an actress URl e.g hqporner.com/actress/...
@@ -136,8 +135,8 @@ for video in actress_object:
 ## Get videos by category
 
 ```python
-from hqporner_api.api import Client
-from hqporner_api.modules.locals import Category
+from hqporner_api import Client
+from hqporner_api import Category
 videos = Client().get_videos_by_category(Category.POV) # example category 
 
 for video in videos:
@@ -166,8 +165,8 @@ for video in videos:
 ## Get top porn
 
 ```python
-from hqporner_api.api import Client
-from hqporner_api.modules.locals import Sort
+from hqporner_api import Client
+from hqporner_api import Sort
 top_porn = Client().get_top_porn(sort_by=Sort.WEEK) # example sorting 
 
 """
@@ -182,28 +181,21 @@ Sort:
 
 ## Get all categories
 ```python
-from hqporner_api.api import Client
+from hqporner_api import Client
 categories = Client().get_all_categories() # Returns a list with all possible categories
 ```
 
 ## Get random video
 ```python
-from hqporner_api.api import Client
+from hqporner_api import Client
 random_video = Client().get_random_video() # Returns a random video object
 ```
 
 ## Get brazzers videos
 ```python
 from hqporner_api.api import Client
-brazzers_videos = Client().get_brazzers_videos(pages=int) # Returns brazzers videos (generator) (pages: optional)
+brazzers_videos = Client().get_brazzers_videos() # Returns brazzers videos (generator) (pages: optional)
 ```
-
-# Additional Arguments:
-
-Some methods have a `pages` argument. This argument defines over how many pages the script iterates on HQPorner.
-For example, the Pornstar Anissa Kate has currently over 162 videos. If you scroll down, you can see that
-those are packed in four pages. If no more pages are left, the generator will simply stop and everything's fine.
-One page = 46 videos
 
 # Locals
 

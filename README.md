@@ -25,7 +25,7 @@ HQPorner API is an API for HQPorner. It allows you to fetch information from vid
 
 
 ```python
-from hqporner_api.api import Client, Quality
+from hqporner_api import Client, Quality
 # Initialize a Client object
 client = Client()
 
