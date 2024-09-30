@@ -19,7 +19,7 @@ HQPorner API is an API for HQPorner. It allows you to fetch information from vid
 
 # Quickstart
 
-### Have a look at the [Documentation](https://github.com/EchterAlsFake/hqporner_api/blob/master/README/Documentation.md) for more details
+### Have a look at the [Documentation](https://github.com/EchterAlsFake/API_Docs/blob/master/Porn_APIs/HQPorner.md) for more details
 
 - Install the library with `pip install hqporner_api`
 
