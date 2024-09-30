@@ -1,4 +1,5 @@
 import argparse
+import os
 
 from functools import cached_property
 from random import choice
@@ -181,7 +182,7 @@ class Video:
         }
 
         if no_title is False:
-            path = f"{path}{self.title}.mp4"
+            path = f"{path}{os.sep}{self.title}.mp4"
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
