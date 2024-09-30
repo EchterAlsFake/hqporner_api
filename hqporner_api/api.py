@@ -156,11 +156,12 @@ class Video:
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
-    def download(self, quality, path="./", callback=None):
+    def download(self, quality, path="./", callback=None, no_title=False):
         """
         :param quality:
         :param path:
         :param callback:
+        :param no_title:
         :return: (bool)
         """
         quality = Core().fix_quality(quality)
@@ -178,6 +179,9 @@ class Video:
             Quality.HALF: sorted(quals, key=lambda x: int(x))[len(quals) // 2],
             Quality.WORST: min(quals, key=lambda x: int(x))
         }
+
+        if no_title is False:
+            path = f"{path}{self.title}.mp4"
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
