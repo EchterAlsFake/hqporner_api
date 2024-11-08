@@ -182,7 +182,7 @@ class Video:
         }
 
         if no_title is False:
-            path = f"{path}{os.sep}{self.title}.mp4"
+            path = os.path.join(path, self.title + ".mp4")
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
