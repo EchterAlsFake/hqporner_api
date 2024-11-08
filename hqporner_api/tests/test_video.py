@@ -18,7 +18,7 @@ def test_video_length():
 
 
 def test_categories():
-    assert isinstance(video.categories, list) and len(video.categories) > 0
+    assert isinstance(video.tags, list) and len(video.tags) > 0
 
 
 def test_qualities():
