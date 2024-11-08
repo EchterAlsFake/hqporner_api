@@ -121,13 +121,13 @@ class Video:
             raise WeirdError
 
     @cached_property
-    def categories(self) -> list:
+    def tags(self) -> list:
         """
-        :return: (list) A list of categories featured in this video
+        :return: (list) A list of tags (categories) featured in this video
         """
-        categories = PATTERN_CATEGORY.findall(self.html_content)
-        if len(categories) > 0:
-            return categories
+        tags = PATTERN_TAGS.findall(self.html_content)
+        if len(tags) > 0:
+            return tags
 
         else:
             raise WeirdError
