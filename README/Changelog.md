@@ -64,3 +64,11 @@ I recommend reading through the documentation, as some usages have changed.
 - code refactoring
 - typo fixes
 - idk
+
+# 1.7
+- support for custom proxies (See Documentation)
+- new custom caching system
+- added download tests
+
+The new caching system is a custom class implementation using dictionaries inside the BaseCore class.
+It will save all network requests that are UTF-8 encoded, e.g., HTML content

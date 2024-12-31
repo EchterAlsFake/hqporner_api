@@ -1,16 +1,27 @@
-import argparse
 import os
+import logging
+import argparse
+import traceback
 
-from functools import cached_property
 from random import choice
 from typing import Generator
 from bs4 import BeautifulSoup
-from hqporner_api.modules.locals import *
+from base_api.base import BaseCore
+from functools import cached_property
 from hqporner_api.modules.errors import *
+from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
-from base_api.base import Core
-from base_api.modules.quality import Quality
-from base_api.modules.download import legacy_download
+from base_api.modules import consts as bs_consts
+
+bs_consts.HEADERS = headers
+core = BaseCore()
+
+logging.basicConfig(format='%(name)s %(levelname)s %(asctime)s %(message)s', datefmt='%I:%M:%S %p')
+logger = logging.getLogger("HQPORNER API")
+logger.setLevel(logging.DEBUG)
+
+def disable_logging():
+    logger.setLevel(logging.CRITICAL)
 
 
 class Checks:
@@ -27,6 +38,7 @@ class Checks:
         """
         match = PATTERN_CHECK_URL.match(url)
         if match:
+            logger.debug(f"URL matched {url}")
             return url
 
         else:
@@ -61,7 +73,10 @@ class Video:
         :param url: (str) The URL of the video
         """
         self.url = Checks().check_url(url)
-        self.html_content = Core().get_content(url=url, headers=headers).decode("utf-8")
+
+    @property
+    def html_content(self):
+        return core.fetch(url=self.url)
 
     @cached_property
     def title(self) -> str:
@@ -147,13 +162,12 @@ class Video:
 
         return sorted(qualities, key=int)  # Sorting to maintain a consistent order
 
-    @cached_property
     def direct_download_urls(self) -> list:
         """
         :return: (list) The direct download urls for all available qualities
         """
         cdn_url = f"https://{self.cdn_url}"
-        html_content = Core().get_content(url=cdn_url, headers=headers).decode("utf-8")
+        html_content = core.fetch(url=cdn_url)
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
@@ -165,7 +179,6 @@ class Video:
         :param no_title:
         :return: (bool)
         """
-        quality = Core().fix_quality(quality)
 
         cdn_urls = self.direct_download_urls
         quals = self.video_qualities
@@ -176,9 +189,9 @@ class Video:
             raise NotAvailable
 
         quality_map = {
-            Quality.BEST: max(quals, key=lambda x: int(x)),
-            Quality.HALF: sorted(quals, key=lambda x: int(x))[len(quals) // 2],
-            Quality.WORST: min(quals, key=lambda x: int(x))
+            "best": max(quals, key=lambda x: int(x)),
+            "half": sorted(quals, key=lambda x: int(x))[len(quals) // 2],
+            "worst": min(quals, key=lambda x: int(x))
         }
 
         if no_title is False:
@@ -186,7 +199,14 @@ class Video:
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
-        legacy_download(stream=True, url=download_url, path=path, callback=callback)
+        try:
+            core.legacy_download(stream=True, url=download_url, path=path, callback=callback)
+            return True
+
+        except Exception:
+            error = traceback.format_exc()
+            logger.error(error)
+            return False
 
     def get_thumbnails(self) -> list:
         """
@@ -201,7 +221,7 @@ class Video:
         script = None
 
         query = title.replace(" ", "+")
-        html_content = Core().get_content(url=f"{root_url}/?q={query}").decode("utf-8")
+        html_content = core.fetch(url=f"{root_url}/?q={query}")
         soup = BeautifulSoup(html_content, 'lxml')
         divs = soup.find_all('div', class_='row')
 
@@ -243,7 +263,7 @@ class Client:
         name = Checks().check_actress(name)
         for page in range(100):
             final_url = f"{root_url_actress}{name}/{page}"
-            html_content = Core().get_content(final_url, headers=headers).decode("utf-8")
+            html_content = core.fetch(final_url)
             if not check_for_page(html_content):
                 break
 
@@ -260,7 +280,7 @@ class Client:
         :return: Video object
         """
         for page in range(100):
-            html_content = Core().get_content(url=f"{root_url_category}{category}/{page}", headers=headers).decode("utf-8")
+            html_content = core.fetch(url=f"{root_url_category}{category}/{page}")
             if not check_for_page(html_content):
                 break
 
@@ -276,14 +296,14 @@ class Client:
         :return: Video object
         """
         query = query.replace(" ", "+")
-        html_content = Core().get_content(url=f"{root_url}?q={query}", headers=headers).decode("utf-8")
+        html_content = core.fetch(url=f"{root_url}?q={query}")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise NoVideosFound
 
         else:
             for page in range(100):
-                html_content = Core().get_content(url=f"{root_url}?q={query}&p={page}", headers=headers).decode("utf-8")
+                html_content = core.fetch(url=f"{root_url}?q={query}&p={page}")
                 if not check_for_page(html_content):
                     break
 
@@ -300,10 +320,10 @@ class Client:
         """
         for page in range(100):
             if sort_by == "all_time":
-                html_content = Core().get_content(f"{root_url_top}{page}", headers=headers).decode("utf-8")
+                html_content = core.fetch(f"{root_url_top}{page}")
 
             else:
-                html_content = Core().get_content(f"{root_url_top}{sort_by}/{page}", headers=headers).decode("utf-8")
+                html_content = core.fetch(f"{root_url_top}{sort_by}/{page}")
 
             if not check_for_page(html_content):
                 break
@@ -318,7 +338,7 @@ class Client:
         """
         :return: (list) Returns all categories of HQporner as a list of strings
         """
-        html_content = Core().get_content("https://hqporner.com/categories", headers=headers).decode("utf-8")
+        html_content = core.fetch("https://hqporner.com/categories")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
@@ -327,7 +347,7 @@ class Client:
         """
         :return: Video object (random video from HQPorner)
         """
-        html_content = Core().get_content(root_random, headers=headers).decode("utf-8")
+        html_content = core.fetch(root_random)
         videos = PATTERN_VIDEOS_ON_SITE_ALT.findall(html_content)
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}")
@@ -338,7 +358,7 @@ class Client:
         :return: Video object
         """
         for page in range(100):
-            html_content = Core().get_content(url=f"{root_brazzers}/{page}", headers=headers).decode("utf-8")
+            html_content = core.fetch(url=f"{root_brazzers}/{page}")
             if not check_for_page(html_content):
                 break
 
@@ -365,7 +385,7 @@ def main():
     if args.download:
         client = Client()
         video = client.get_video(args.download)
-        path = Core().return_path(args=args, video=video)
+        path = core.return_path(args=args, video=video)
         video.download(quality=args.quality, path=path)
 
     if args.file:
@@ -379,7 +399,7 @@ def main():
             videos.append(client.get_video(url))
 
         for video in videos:
-            path = Core().return_path(args=args, video=video)
+            path = core.return_path(args=args, video=video)
             video.download(quality=args.quality, path=path)
 
 
