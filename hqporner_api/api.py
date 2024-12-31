@@ -152,7 +152,7 @@ class Video:
         """
         :return: (list) The available qualities of the video
         """
-        quals = self.direct_download_urls
+        quals = self.direct_download_urls()
         qualities = set()  # Using a set to avoid duplicates
 
         for url in quals:
@@ -180,7 +180,7 @@ class Video:
         :return: (bool)
         """
 
-        cdn_urls = self.direct_download_urls
+        cdn_urls = self.direct_download_urls()
         quals = self.video_qualities
         quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}
 
