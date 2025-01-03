@@ -72,3 +72,7 @@ I recommend reading through the documentation, as some usages have changed.
 
 The new caching system is a custom class implementation using dictionaries inside the BaseCore class.
 It will save all network requests that are UTF-8 encoded, e.g., HTML content
+
+# 1.7.1
+- switched to httpx
+- removed lxml, requests from dependencies

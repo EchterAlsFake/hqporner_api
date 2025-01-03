@@ -200,7 +200,7 @@ class Video:
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
         try:
-            core.legacy_download(stream=True, url=download_url, path=path, callback=callback)
+            core.legacy_download(url=download_url, path=path, callback=callback)
             return True
 
         except Exception:
@@ -222,7 +222,7 @@ class Video:
 
         query = title.replace(" ", "+")
         html_content = core.fetch(url=f"{root_url}/?q={query}")
-        soup = BeautifulSoup(html_content, 'lxml')
+        soup = BeautifulSoup(html_content)
         divs = soup.find_all('div', class_='row')
 
         for div in divs:

@@ -2,11 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="hqporner_api",
-    version="1.7.0",
+    version="1.7.1",
     packages=find_packages(),
-    install_requires=[
-        "requests", "lxml", "bs4", "eaf_base_api"
-    ],
+    install_requires=[ "bs4", "eaf_base_api"],
     entry_points={
         'console_scripts': ['hqporner_api=hqporner_api.api:main'
             # If you want to create any executable scripts
