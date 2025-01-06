@@ -1,11 +1,12 @@
+import asyncio
 import os
 import logging
 import argparse
 import traceback
 
 from random import choice
-from typing import Generator
 from bs4 import BeautifulSoup
+from typing import List
 from base_api.base import BaseCore
 from functools import cached_property
 from hqporner_api.modules.errors import *
@@ -68,15 +69,17 @@ class Checks:
 
 
 class Video:
-    def __init__(self, url):
+    def __init__(self, url, content):
         """
         :param url: (str) The URL of the video
         """
-        self.url = Checks().check_url(url)
+        self.url = url
+        self.html_content = content
 
-    @property
-    def html_content(self):
-        return core.fetch(url=self.url)
+    @classmethod
+    async def create(cls, url):
+        content = await core.fetch(url)
+        return cls(url, content)
 
     @cached_property
     def title(self) -> str:
@@ -147,12 +150,11 @@ class Video:
         else:
             raise WeirdError
 
-    @cached_property
-    def video_qualities(self) -> list:
+    async def video_qualities(self) -> list:
         """
         :return: (list) The available qualities of the video
         """
-        quals = self.direct_download_urls()
+        quals = await self.direct_download_urls()
         qualities = set()  # Using a set to avoid duplicates
 
         for url in quals:
@@ -162,16 +164,16 @@ class Video:
 
         return sorted(qualities, key=int)  # Sorting to maintain a consistent order
 
-    def direct_download_urls(self) -> list:
+    async def direct_download_urls(self) -> list:
         """
         :return: (list) The direct download urls for all available qualities
         """
         cdn_url = f"https://{self.cdn_url}"
-        html_content = core.fetch(url=cdn_url)
+        html_content = await core.fetch(url=cdn_url)
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
-    def download(self, quality, path="./", callback=None, no_title=False):
+    async def download(self, quality, path="./", callback=None, no_title=False):
         """
         :param quality:
         :param path:
@@ -180,8 +182,8 @@ class Video:
         :return: (bool)
         """
 
-        cdn_urls = self.direct_download_urls()
-        quals = self.video_qualities
+        cdn_urls = await self.direct_download_urls()
+        quals = await self.video_qualities()
         quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}
 
         # Define the quality map
@@ -199,8 +201,9 @@ class Video:
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
+
         try:
-            core.legacy_download(url=download_url, path=path, callback=callback)
+            await core.legacy_download(url=download_url, path=path, callback=callback)
             return True
 
         except Exception:
@@ -208,7 +211,7 @@ class Video:
             logger.error(error)
             return False
 
-    def get_thumbnails(self) -> list:
+    async def get_thumbnails(self) -> list:
         """
         :return: (list) First item = Thumbnail, others = Preview
         """
@@ -221,7 +224,7 @@ class Video:
         script = None
 
         query = title.replace(" ", "+")
-        html_content = core.fetch(url=f"{root_url}/?q={query}")
+        html_content = await core.fetch(url=f"{root_url}/?q={query}")
         soup = BeautifulSoup(html_content)
         divs = soup.find_all('div', class_='row')
 
@@ -247,128 +250,136 @@ class Video:
 class Client:
 
     @classmethod
-    def get_video(cls, url: str) -> Video:
+    async def get_video(cls, url: str) -> Video:
         """
         :param url: The video URL
         :return: Video object
         """
-        return Video(url)
+        return await Video.create(url)
 
     @classmethod
-    def get_videos_by_actress(cls, name: str) -> Generator[Video, None, None]:
+    async def processor(cls, urls):
+        tasks = []
+
+        async def process_page(url, tasks):
+            html = await core.fetch(url)
+            if not check_for_page(html):
+                for task in tasks:
+                    task.cancel()
+                    return None
+
+            return html
+
+        for url in urls:
+            task = asyncio.create_task(process_page(url, tasks))
+            tasks.append(task)
+
+        try:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        except asyncio.CancelledError:
+            pass
+
+        final_results = [result for result in results if result not in (None, asyncio.CancelledError)]
+        urls = []
+
+        for html in final_results:
+            urls_ = PATTERN_VIDEOS_ON_SITE.findall(html)
+            for url in urls_:
+                url = f"{root_url}hdporn/{url}"
+                if PATTERN_CHECK_URL.match(url):
+                    urls.append(url)
+
+        video_tasks = [asyncio.create_task(Client.get_video(url)) for url in urls]
+        video_results = await asyncio.gather(*video_tasks)
+        return video_results
+
+    @classmethod
+    async def get_videos_by_actress(cls, name: str, pages: int = 2) -> List[Video]:
         """
         :param name: The actress name or the URL
-        :return: Video object
+        :param pages: How many pages to fetch
+        :return: list of video objects
         """
         name = Checks().check_actress(name)
-        for page in range(100):
-            final_url = f"{root_url_actress}{name}/{page}"
-            html_content = core.fetch(final_url)
-            if not check_for_page(html_content):
-                break
+        urls_to_process = [f"{root_url_actress}{name}/{page}" for page in range(pages)]
+        return await Client.processor(urls=urls_to_process)
 
-            urls_ = PATTERN_VIDEOS_ON_SITE.findall(html_content)
-            for url_ in urls_:
-                url = f"{root_url}hdporn/{url_}"
-                if PATTERN_CHECK_URL.match(url):
-                    yield Video(url)
 
     @classmethod
-    def get_videos_by_category(cls, category: Category) -> Generator[Video, None, None]:
+    async def get_videos_by_category(cls, category: Category, pages: int = 2) -> List[Video]:
         """
         :param category: Category: The video category
+        :param pages: How many pages to fetch
         :return: Video object
         """
-        for page in range(100):
-            html_content = core.fetch(url=f"{root_url_category}{category}/{page}")
-            if not check_for_page(html_content):
-                break
+        urls = [f"{root_url_category}{category}/{page}" for page in range(pages)]
+        return await Client.processor(urls=urls)
 
-            else:
-                urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
-                for url in urls:
-                    yield Video(f"{root_url}hdporn/{url}")
 
     @classmethod
-    def search_videos(cls, query: str) -> Generator[Video, None, None]:
+    async def search_videos(cls, query: str, pages: int = 2) -> List[Video]:
         """
         :param query:
+        :param pages: How many pages to fetch
         :return: Video object
         """
         query = query.replace(" ", "+")
-        html_content = core.fetch(url=f"{root_url}?q={query}")
+        html_content = await core.fetch(url=f"{root_url}?q={query}")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise NoVideosFound
 
-        else:
-            for page in range(100):
-                html_content = core.fetch(url=f"{root_url}?q={query}&p={page}")
-                if not check_for_page(html_content):
-                    break
 
-                else:
-                    urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
-                    for url in urls:
-                        yield Video(f"{root_url}hdporn/{url}")
+        else:
+            urls = [f"{root_url}?q={query}&page={page}" for page in range(pages)]
+            return await Client.processor(urls)
 
     @classmethod
-    def get_top_porn(cls, sort_by: Sort) -> Generator[Video, None, None]:
+    async def get_top_porn(cls, sort_by: Sort, pages: int = 2) -> List[Video]:
         """
         :param sort_by: all_time, month, week
-        :return: Video object
+        :param pages: How many pages to fetch
+        :return: List of video objects
         """
-        for page in range(100):
-            if sort_by == "all_time":
-                html_content = core.fetch(f"{root_url_top}{page}")
+        if sort_by == "all_time":
+            urls = [f"{root_url_top}{page}" for page in range(pages)]
 
-            else:
-                html_content = core.fetch(f"{root_url_top}{sort_by}/{page}")
+        else:
+            urls = [f"{root_url_top}{sort_by}/{page}" for page in range(pages)]
 
-            if not check_for_page(html_content):
-                break
+        return await Client.processor(urls)
 
-            else:
-                urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
-                for url in urls:
-                    yield Video(f"{root_url}hdporn/{url}")
 
     @classmethod
-    def get_all_categories(cls) -> list:
+    async def get_all_categories(cls) -> list:
         """
         :return: (list) Returns all categories of HQporner as a list of strings
         """
-        html_content = core.fetch("https://hqporner.com/categories")
+        html_content = await core.fetch("https://hqporner.com/categories")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
     @classmethod
-    def get_random_video(cls) -> Video:
+    async def get_random_video(cls) -> Video:
         """
         :return: Video object (random video from HQPorner)
         """
-        html_content = core.fetch(root_random)
+        html_content = await core.fetch(root_random)
         videos = PATTERN_VIDEOS_ON_SITE_ALT.findall(html_content)
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
-        return Video(f"{root_url}hdporn/{video}")
+        return await Video.create(f"{root_url}hdporn/{video}")
 
     @classmethod
-    def get_brazzers_videos(cls) -> Generator[Video, None, None]:
+    async def get_brazzers_videos(cls, pages: int = 2) -> List[Video]:
         """
         :return: Video object
         """
-        for page in range(100):
-            html_content = core.fetch(url=f"{root_brazzers}/{page}")
-            if not check_for_page(html_content):
-                break
-
-            else:
-                urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
-                for url_ in urls:
-                    yield Video(f"{root_url}hdporn/{url_}")
+        urls = [f"{root_brazzers}/{page}" for page in range(pages)]
+        return await Client.processor(urls)
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(description="API Command Line Interface")
     parser.add_argument("--download", metavar="URL (str)", type=str, help="URL to download from")
     parser.add_argument("--quality", metavar="best,half,worst", type=str, help="The video quality (best,half,worst)",
@@ -377,16 +388,15 @@ def main():
                         help="(Optional) Specify a file with URLs (separated with new lines)")
     parser.add_argument("--output", metavar="Output directory", type=str, help="The output path (with filename)",
                         required=True)
-    parser.add_argument("--use-title", metavar="True,False", type=bool,
+    parser.add_argument("--no-title", metavar="True,False", type=bool,
                         help="Whether to apply video title automatically to output path or not", required=True)
 
     args = parser.parse_args()
 
     if args.download:
         client = Client()
-        video = client.get_video(args.download)
-        path = core.return_path(args=args, video=video)
-        video.download(quality=args.quality, path=path)
+        video = await client.get_video(args.download)
+        await video.download(quality=args.quality, path=args.output, no_title=args.no_title)
 
     if args.file:
         videos = []
@@ -396,12 +406,11 @@ def main():
             content = file.read().splitlines()
 
         for url in content:
-            videos.append(client.get_video(url))
+            videos.append(await client.get_video(url))
 
         for video in videos:
-            path = core.return_path(args=args, video=video)
-            video.download(quality=args.quality, path=path)
+            await video.download(quality=args.quality, path=args.output, no_title=args.no_title)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

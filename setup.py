@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="hqporner_api",
+    name="hqporner_api-async",
     version="1.7.1",
     packages=find_packages(),
-    install_requires=[ "bs4", "eaf_base_api"],
+    install_requires=[ "bs4", "eaf_base_api-async"],
     entry_points={
         'console_scripts': ['hqporner_api=hqporner_api.api:main'
             # If you want to create any executable scripts

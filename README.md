@@ -2,8 +2,10 @@
 
 <div align="center">
     <a href="https://pepy.tech/project/hqporner_api"><img src="https://static.pepy.tech/badge/hqporner_api" alt="Downloads"></a>
+    <a href="https://pepy.tech/project/hqporner_api-async"><img src="https://static.pepy.tech/badge/hqporner_api-async" alt="Downloads"></a> <span style="font-size: 20px;">(Async)</span>
     <a href="https://github.com/EchterAlsFake/hqporner_api/workflows/"><img src="https://github.com/EchterAlsFake/hqporner_api/workflows/CodeQL/badge.svg" alt="CodeQL Analysis"/></a>
-    <a href="https://github.com/EchterAlsFake/hqporner_api/workflows/"><img src="https://github.com/EchterAlsFake/hqporner_api/actions/workflows/tests.yml/badge.svg" alt="API Tests"/></a>
+    <a href="https://github.com/EchterAlsFake/hqporner_api/actions/workflows/sync-tests.yml"><img src="https://github.com/EchterAlsFake/hqporner_api/actions/workflows/sync-tests.yml/badge.svg" alt="API Tests"/></a>
+    <a href="https://github.com/EchterAlsFake/hqporner_api/actions/workflows/async-tests.yml"><img src="https://github.com/EchterAlsFake/hqporner_api/actions/workflows/async-tests.yml/badge.svg?branch=async" alt="API Tests"/></a>
 </div>
 
 # Description
