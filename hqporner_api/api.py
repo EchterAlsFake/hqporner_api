@@ -195,7 +195,7 @@ class Video:
         }
 
         if no_title is False:
-            path = os.path.join(path, self.title + ".mp4")
+            path = os.path.join(path, f"{self.title}.mp4")
 
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
@@ -377,16 +377,15 @@ def main():
                         help="(Optional) Specify a file with URLs (separated with new lines)")
     parser.add_argument("--output", metavar="Output directory", type=str, help="The output path (with filename)",
                         required=True)
-    parser.add_argument("--use-title", metavar="True,False", type=bool,
+    parser.add_argument("--no-title", metavar="True,False", type=str,
                         help="Whether to apply video title automatically to output path or not", required=True)
 
     args = parser.parse_args()
-
+    no_title = args.no_title
     if args.download:
         client = Client()
         video = client.get_video(args.download)
-        path = core.return_path(args=args, video=video)
-        video.download(quality=args.quality, path=path)
+        video.download(quality=args.quality, path=args.output, no_title=no_title)
 
     if args.file:
         videos = []
@@ -399,8 +398,7 @@ def main():
             videos.append(client.get_video(url))
 
         for video in videos:
-            path = core.return_path(args=args, video=video)
-            video.download(quality=args.quality, path=path)
+            video.download(quality=args.quality, path=args.output, no_title=no_title)
 
 
 if __name__ == "__main__":
