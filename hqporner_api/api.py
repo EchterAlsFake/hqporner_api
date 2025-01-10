@@ -222,7 +222,7 @@ class Video:
 
         query = title.replace(" ", "+")
         html_content = core.fetch(url=f"{root_url}/?q={query}")
-        soup = BeautifulSoup(html_content)
+        soup = BeautifulSoup(html_content, features="html.parser")
         divs = soup.find_all('div', class_='row')
 
         for div in divs:
