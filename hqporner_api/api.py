@@ -240,7 +240,12 @@ class Video:
                 script = script.text
                 break
 
-        urls_ = pattern.findall(script)
+        try:
+            urls_ = pattern.findall(script)
+
+        except TypeError:
+            return None # Error from HQPorner itself
+
         main_thumbnail = urls_[0].replace("_1.jpg", "_main.jpg")
         urls.append("https:" + main_thumbnail)
         for url in urls_:
@@ -266,7 +271,7 @@ class Client:
         :return: Video object
         """
         name = Checks().check_actress(name)
-        for page in range(100):
+        for page in range(1, 100):
             final_url = f"{root_url_actress}{name}/{page}"
             html_content = core.fetch(final_url)
             if not check_for_page(html_content):
@@ -407,4 +412,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    client = Client()
+    actress_videos = client.get_videos_by_actress("https://hqporner.com/actress/demi-hawks")
+    for idx, ideo in enumerate(actress_videos):
+        print(f"{idx}) {ideo.title}")
+        print(ideo.get_thumbnails()[0])
