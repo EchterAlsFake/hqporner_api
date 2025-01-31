@@ -412,8 +412,4 @@ def main():
 
 
 if __name__ == "__main__":
-    client = Client()
-    actress_videos = client.get_videos_by_actress("https://hqporner.com/actress/demi-hawks")
-    for idx, ideo in enumerate(actress_videos):
-        print(f"{idx}) {ideo.title}")
-        print(ideo.get_thumbnails()[0])
+    main()
