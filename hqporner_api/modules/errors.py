@@ -24,5 +24,9 @@ class NotAvailable(Exception):
 
 
 class WeirdError(Exception):
-    def __init__(self):
-        self.msg = "This is an unexpected error. If you see this, please report it on GitHub, thanks :)"
+    def __init__(self, msg=None):
+        if msg is None:
+            self.msg = "This is an unexpected error. If you see this, please report it on GitHub, thanks :)"
+
+        else:
+            self.msg = msg
