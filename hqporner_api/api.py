@@ -11,19 +11,20 @@ from functools import cached_property
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
-from base_api.modules import consts as bs_consts
+from base_api.modules import config
 
-bs_consts.HEADERS = headers
 core = BaseCore()
 
-
-def refresh_core(enable_logging=False, log_file: str = None, level=None): # Needed for Porn Fetch
+def refresh_core(custom_config=None, enable_logging=False, log_file: str = None, level=None): # Needed for Porn Fetch
     global core
-    core = BaseCore()
+
+    cfg = custom_config or config.config
+    cfg.headers = headers
+    core = BaseCore(cfg)
     if enable_logging:
         core.enable_logging(log_file=log_file, level=level)
 
-
+refresh_core()
 class Checks:
     """
     Does the same as the decorators, but decorators are not good for IDEs because they get confused, so I moved
@@ -175,7 +176,7 @@ class Video:
         :return: (list) The direct download urls for all available qualities
         """
         cdn_url = f"https://{self.cdn_url}"
-        html_content = core.fetch(url=cdn_url)
+        html_content = core.fetch(cdn_url)
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
@@ -427,4 +428,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    video = Client().get_video("https://hqporner.com/hdporn/121767-breakfast_with_creampie.html")
+    print(video.cdn_url)
+    print(video.direct_download_urls())
+
+
+    #main()
+
