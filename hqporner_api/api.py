@@ -418,10 +418,5 @@ def main():
 
 
 if __name__ == "__main__":
-    video = Client().get_video("https://hqporner.com/hdporn/121767-breakfast_with_creampie.html")
-    print(video.cdn_url)
-    print(video.direct_download_urls())
-
-
-    #main()
+    main()
 
