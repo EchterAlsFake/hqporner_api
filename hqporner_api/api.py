@@ -11,20 +11,8 @@ from functools import cached_property
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
-from base_api.modules import config
 
-core = BaseCore()
 
-def refresh_core(custom_config=None, enable_logging=False, log_file: str = None, level=None): # Needed for Porn Fetch
-    global core
-
-    cfg = custom_config or config.config
-    cfg.headers = headers
-    core = BaseCore(cfg)
-    if enable_logging:
-        core.enable_logging(log_file=log_file, level=level)
-
-refresh_core()
 class Checks:
     """
     Does the same as the decorators, but decorators are not good for IDEs because they get confused, so I moved
@@ -73,19 +61,20 @@ class Checks:
 
 
 class Video:
-    def __init__(self, url):
+    def __init__(self, url, core):
         """
         :param url: (str) The URL of the video
         """
         self.url = Checks().check_url(url)
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
+        self.core = core
 
     def enable_logging(self, log_file: str = None, level=None):
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level)
 
     @property
     def html_content(self):
-        return core.fetch(url=self.url)
+        return self.core.fetch(url=self.url)
 
     @cached_property
     def title(self) -> str:
@@ -176,7 +165,7 @@ class Video:
         :return: (list) The direct download urls for all available qualities
         """
         cdn_url = f"https://{self.cdn_url}"
-        html_content = core.fetch(cdn_url)
+        html_content = self.core.fetch(cdn_url)
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
@@ -209,7 +198,7 @@ class Video:
         selected_quality = quality_map[quality]
         download_url = f"https://{quality_url_map[selected_quality]}"
         try:
-            core.legacy_download(url=download_url, path=path, callback=callback)
+            self.core.legacy_download(url=download_url, path=path, callback=callback)
             return True
 
         except Exception:
@@ -230,7 +219,7 @@ class Video:
         script = None
 
         query = title.replace(" ", "+")
-        html_content = core.fetch(url=f"{root_url}/?q={query}")
+        html_content = self.core.fetch(url=f"{root_url}/?q={query}")
         soup = BeautifulSoup(html_content, features="html.parser")
         divs = soup.find_all('div', class_='row')
 
@@ -259,19 +248,21 @@ class Video:
 
 
 class Client:
-    def __init__(self):
+    def __init__(self, core = None):
+        self.core = core or BaseCore()
+        self.core.config.headers = headers # These headers MUST be applied, otherwise the API will not work!
+        self.core.initialize_session()
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=None, level=logging.CRITICAL)
 
     def enable_logging(self, log_file: str = None, level = None):
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=log_file, level=level)
 
-    @classmethod
-    def get_video(cls, url: str) -> Video:
+    def get_video(self, url: str) -> Video:
         """
         :param url: The video URL
         :return: Video object
         """
-        return Video(url)
+        return Video(url, self.core)
 
 
     def get_videos_by_actress(self, name: str) -> Generator[Video, None, None]:
@@ -284,7 +275,7 @@ class Client:
         for page in range(1, 100):
             self.logger.info(f"Iterating for page: {page}")
             final_url = f"{root_url_actress}{name}/{page}"
-            html_content = core.fetch(final_url)
+            html_content = self.core.fetch(final_url)
             if not check_for_page(html_content):
                 self.logger.info("No more videos available, breaking")
                 break
@@ -293,7 +284,7 @@ class Client:
             for url_ in urls_:
                 url = f"{root_url}hdporn/{url_}"
                 if PATTERN_CHECK_URL.match(url):
-                    yield Video(url)
+                    yield Video(url, self.core)
 
 
     def get_videos_by_category(self, category: Category) -> Generator[Video, None, None]:
@@ -303,7 +294,7 @@ class Client:
         """
         for page in range(100):
             self.logger.info(f"Iterating for page: {page}")
-            html_content = core.fetch(url=f"{root_url_category}{category}/{page}")
+            html_content = self.core.fetch(url=f"{root_url_category}{category}/{page}")
             if not check_for_page(html_content):
                 self.logger.info("No more videos available, breaking")
                 break
@@ -311,7 +302,7 @@ class Client:
             else:
                 urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url in urls:
-                    yield Video(f"{root_url}hdporn/{url}")
+                    yield Video(f"{root_url}hdporn/{url}", self.core)
 
 
     def search_videos(self, query: str) -> Generator[Video, None, None]:
@@ -320,7 +311,7 @@ class Client:
         :return: Video object
         """
         query = query.replace(" ", "+")
-        html_content = core.fetch(url=f"{root_url}?q={query}")
+        html_content = self.core.fetch(url=f"{root_url}?q={query}")
         match = PATTERN_CANT_FIND.search(html_content)
         if "Sorry" in match.group(1).strip():
             raise NoVideosFound
@@ -328,14 +319,14 @@ class Client:
         else:
             for page in range(100):
                 self.logger.info(f"Iterating for page: {page}")
-                html_content = core.fetch(url=f"{root_url}?q={query}&p={page}")
+                html_content = self.core.fetch(url=f"{root_url}?q={query}&p={page}")
                 if not check_for_page(html_content):
                     break
 
                 else:
                     urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                     for url in urls:
-                        yield Video(f"{root_url}hdporn/{url}")
+                        yield Video(f"{root_url}hdporn/{url}", self.core)
 
     def get_top_porn(self, sort_by: Sort) -> Generator[Video, None, None]:
         """
@@ -345,10 +336,10 @@ class Client:
         for page in range(100):
             self.logger.debug(f"Iterating for page: {page}")
             if sort_by == "all_time":
-                html_content = core.fetch(f"{root_url_top}{page}")
+                html_content = self.core.fetch(f"{root_url_top}{page}")
 
             else:
-                html_content = core.fetch(f"{root_url_top}{sort_by}/{page}")
+                html_content = self.core.fetch(f"{root_url_top}{sort_by}/{page}")
 
             if not check_for_page(html_content):
                 self.logger.info("No more videos available, breaking")
@@ -357,14 +348,13 @@ class Client:
             else:
                 urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url in urls:
-                    yield Video(f"{root_url}hdporn/{url}")
+                    yield Video(f"{root_url}hdporn/{url}", self.core)
 
-    @classmethod
-    def get_all_categories(cls) -> list:
+    def get_all_categories(self) -> list:
         """
         :return: (list) Returns all categories of HQporner as a list of strings
         """
-        html_content = core.fetch("https://hqporner.com/categories")
+        html_content = self.core.fetch("https://hqporner.com/categories")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
@@ -372,11 +362,11 @@ class Client:
         """
         :return: Video object (random video from HQPorner)
         """
-        html_content = core.fetch(root_random)
+        html_content = self.core.fetch(root_random)
         videos = PATTERN_VIDEOS_ON_SITE_ALT.findall(html_content)
         self.logger.info(f"Got {len(videos)} videos from HQPorner")
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
-        return Video(f"{root_url}hdporn/{video}")
+        return Video(f"{root_url}hdporn/{video}", self.core)
 
     def get_brazzers_videos(self) -> Generator[Video, None, None]:
         """
@@ -384,14 +374,14 @@ class Client:
         """
         for page in range(100):
             self.logger.info(f"Iterating for page: {page}")
-            html_content = core.fetch(url=f"{root_brazzers}/{page}")
+            html_content = self.core.fetch(url=f"{root_brazzers}/{page}")
             if not check_for_page(html_content):
                 break
 
             else:
                 urls = PATTERN_VIDEOS_ON_SITE.findall(html_content)
                 for url_ in urls:
-                    yield Video(f"{root_url}hdporn/{url_}")
+                    yield Video(f"{root_url}hdporn/{url_}", self.core)
 
 
 def main():

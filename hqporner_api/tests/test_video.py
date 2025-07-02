@@ -1,8 +1,9 @@
-from hqporner_api.api import Video
+from hqporner_api.api import Client
 
 
+client = Client()
 url = "https://hqporner.com/hdporn/99748-exercise_bike_Mila_Azul.html"
-video = Video(url)
+video = client.get_video(url)
 
 
 def test_title():

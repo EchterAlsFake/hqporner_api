@@ -1,6 +1,5 @@
 from hqporner_api.api import Client, Sort
 
-
 client = Client()
 
 
