@@ -1,6 +1,3 @@
-from pyexpat.errors import messages
-
-
 class InvalidCategory(Exception):
     def __init__(self):
         self.msg = "Invalid Category!"
