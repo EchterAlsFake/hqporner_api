@@ -6,11 +6,12 @@ import traceback
 from random import choice
 from typing import Generator
 from bs4 import BeautifulSoup
-from base_api.base import BaseCore, setup_logger
 from functools import cached_property
+from base_api.modules.errors import *
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
+from base_api.base import BaseCore, setup_logger
 
 
 class Checks:
@@ -21,8 +22,8 @@ class Checks:
     def __init__(self):
         self.logger = setup_logger(name="HQPorner API - [Checks]", log_file=None, level=logging.CRITICAL)
 
-    def enable_logging(self, log_file: str = None, level=None):
-        self.logger = setup_logger(name="HQPorner API - [Checks]", log_file=log_file, level=level)
+    def enable_logging(self, log_file: str = None, level=None, log_ip=None, log_port=None):
+        self.logger = setup_logger(name="HQPorner API - [Checks]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     def check_url(self, url: str):
         """
@@ -69,8 +70,8 @@ class Video:
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
         self.core = core
 
-    def enable_logging(self, log_file: str = None, level=None):
-        self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level)
+    def enable_logging(self, log_file: str = None, level=None, log_ip=None, log_port=None):
+        self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     @property
     def html_content(self):
@@ -244,6 +245,9 @@ class Video:
         for url in urls_:
             urls.append("https:" + url)
 
+        if urls is None or len(urls) == 0:
+            raise ThumbnailError("Couldn't find any thumbnails for this video. Please report this issue in GitHub!")
+
         return urls
 
 
@@ -254,8 +258,8 @@ class Client:
         self.core.initialize_session()
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=None, level=logging.CRITICAL)
 
-    def enable_logging(self, log_file: str = None, level = None):
-        self.logger = setup_logger(name="HQPorner API - [Client]", log_file=log_file, level=level)
+    def enable_logging(self, log_file: str = None, level = None, log_ip=None, log_port=None):
+        self.logger = setup_logger(name="HQPorner API - [Client]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     def get_video(self, url: str) -> Video:
         """
@@ -264,15 +268,14 @@ class Client:
         """
         return Video(url, self.core)
 
-
-    def get_videos_by_actress(self, name: str) -> Generator[Video, None, None]:
+    def get_videos_by_actress(self, name: str, pages: int = 5) -> Generator[Video, None, None]:
         """
+        :param pages: (int) The number of pages to fetch
         :param name: The actress name or the URL
         :return: Video object
         """
         name = Checks().check_actress(name)
-        self.logger.info("Actress is valid")
-        for page in range(1, 100):
+        for page in range(pages):
             self.logger.info(f"Iterating for page: {page}")
             final_url = f"{root_url_actress}{name}/{page}"
             html_content = self.core.fetch(final_url)
@@ -286,13 +289,13 @@ class Client:
                 if PATTERN_CHECK_URL.match(url):
                     yield Video(url, self.core)
 
-
-    def get_videos_by_category(self, category: Category) -> Generator[Video, None, None]:
+    def get_videos_by_category(self, category: Category, pages: int = 5) -> Generator[Video, None, None]:
         """
+        :param pages: (int) The number of pages to fetch
         :param category: Category: The video category
         :return: Video object
         """
-        for page in range(100):
+        for page in range(pages):
             self.logger.info(f"Iterating for page: {page}")
             html_content = self.core.fetch(url=f"{root_url_category}{category}/{page}")
             if not check_for_page(html_content):
@@ -304,10 +307,10 @@ class Client:
                 for url in urls:
                     yield Video(f"{root_url}hdporn/{url}", self.core)
 
-
-    def search_videos(self, query: str) -> Generator[Video, None, None]:
+    def search_videos(self, query: str, pages: int = 5) -> Generator[Video, None, None]:
         """
         :param query:
+        :param pages: (int) How many pages to fetch
         :return: Video object
         """
         query = query.replace(" ", "+")
@@ -317,7 +320,7 @@ class Client:
             raise NoVideosFound
 
         else:
-            for page in range(100):
+            for page in range(pages):
                 self.logger.info(f"Iterating for page: {page}")
                 html_content = self.core.fetch(url=f"{root_url}?q={query}&p={page}")
                 if not check_for_page(html_content):
@@ -328,12 +331,13 @@ class Client:
                     for url in urls:
                         yield Video(f"{root_url}hdporn/{url}", self.core)
 
-    def get_top_porn(self, sort_by: Sort) -> Generator[Video, None, None]:
+    def get_top_porn(self, sort_by: Sort, pages: int = 5) -> Generator[Video, None, None]:
         """
+        :param pages: (int) How many pages to fetch
         :param sort_by: all_time, month, week
         :return: Video object
         """
-        for page in range(100):
+        for page in range(pages):
             self.logger.debug(f"Iterating for page: {page}")
             if sort_by == "all_time":
                 html_content = self.core.fetch(f"{root_url_top}{page}")
@@ -368,11 +372,12 @@ class Client:
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}", self.core)
 
-    def get_brazzers_videos(self) -> Generator[Video, None, None]:
+    def get_brazzers_videos(self, pages: int = 5) -> Generator[Video, None, None]:
         """
+        :param pages: (int) How many pages to fetch
         :return: Video object
         """
-        for page in range(100):
+        for page in range(pages):
             self.logger.info(f"Iterating for page: {page}")
             html_content = self.core.fetch(url=f"{root_brazzers}/{page}")
             if not check_for_page(html_content):
