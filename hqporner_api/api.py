@@ -1,17 +1,18 @@
 import os
+import httpx
 import logging
 import argparse
 import traceback
 
 from random import choice
-from typing import Generator
 from bs4 import BeautifulSoup
 from functools import cached_property
-from base_api.modules.errors import *
+from typing import Generator, Optional
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
 from base_api.base import BaseCore, setup_logger
+from base_api.modules.config import RuntimeConfig
 
 
 class Checks:
@@ -67,41 +68,35 @@ class Video:
         :param url: (str) The URL of the video
         """
         self.url = Checks().check_url(url)
-        self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
         self.core = core
+        self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
 
     def enable_logging(self, log_file: str = None, level=None, log_ip=None, log_port=None):
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     @property
     def html_content(self):
-        return self.core.fetch(url=self.url)
+        content = self.core.fetch(url=self.url)
+        if isinstance(content, httpx.Response):
+            self.logger.warning("404 Error! Applying experimental workaround...")
+            content = self.core.fetch(url=str(self.url).replace("https://hqporner.com", "https://m.hqporner.com"))
+
+        return content
 
     @cached_property
     def title(self) -> str:
         """
         :return: (str) The video title (lowercase)
         """
-        match = PATTERN_TITLE.search(self.html_content)
-        if match:
-            title = match.group(1)
-            return title
+        return PATTERN_TITLE.search(self.html_content).group(1)
 
-        else:
-            raise WeirdError
 
     @cached_property
     def cdn_url(self) -> str:
         """
         :return: (str) The Content Delivery Network URL for the video (can be used to embed the video)
         """
-        match = PATTERN_CDN_URL.search(self.html_content)
-        if match:
-            url_path = match.group(1)
-            return url_path
-
-        else:
-            raise WeirdError
+        return PATTERN_CDN_URL.search(self.html_content).group(1)
 
     @cached_property
     def pornstars(self) -> list:
@@ -115,36 +110,21 @@ class Video:
         """
         :return: (str) The length of the video in h / m / s format
         """
-        match = PATTERN_VIDEO_LENGTH.search(self.html_content)
-        if match:
-            return match.group(1)
-
-        else:
-            raise WeirdError
+        return  PATTERN_VIDEO_LENGTH.search(self.html_content).group(1)
 
     @cached_property
     def publish_date(self) -> str:
         """
         :return: (str) How many months ago the video was uploaded
         """
-        match = PATTERN_PUBLISH_DATE.search(self.html_content)
-        if match:
-            return match.group(1)
-
-        else:
-            raise WeirdError
+        return PATTERN_PUBLISH_DATE.search(self.html_content).group(1)
 
     @cached_property
     def tags(self) -> list:
         """
         :return: (list) A list of tags (categories) featured in this video
         """
-        tags = PATTERN_TAGS.findall(self.html_content)
-        if len(tags) > 0:
-            return tags
-
-        else:
-            raise WeirdError
+        return PATTERN_TAGS.findall(self.html_content)
 
     @cached_property
     def video_qualities(self) -> list:
@@ -252,10 +232,12 @@ class Video:
 
 
 class Client:
-    def __init__(self, core = None):
-        self.core = core or BaseCore()
-        self.core.config.headers = headers # These headers MUST be applied, otherwise the API will not work!
-        self.core.initialize_session()
+    def __init__(self, core: Optional[BaseCore] = None):
+        self.core = core or BaseCore(config=RuntimeConfig())
+        if self.core.session is None:
+            self.core.initialize_session()
+
+        self.core.session.headers = headers # These headers MUST be applied, otherwise the API will not work!
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=None, level=logging.CRITICAL)
 
     def enable_logging(self, log_file: str = None, level = None, log_ip=None, log_port=None):
@@ -424,4 +406,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
