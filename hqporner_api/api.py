@@ -234,10 +234,7 @@ class Video:
 class Client:
     def __init__(self, core: Optional[BaseCore] = None):
         self.core = core or BaseCore(config=RuntimeConfig())
-        if self.core.session is None:
-            self.core.initialize_session()
-
-        self.core.session.headers = headers # These headers MUST be applied, otherwise the API will not work!
+        self.core.initialize_session(headers) # These headers MUST be applied, otherwise the API will not work!
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=None, level=logging.CRITICAL)
 
     def enable_logging(self, log_file: str = None, level = None, log_ip=None, log_port=None):
