@@ -23,7 +23,7 @@ class Checks:
     def __init__(self):
         self.logger = setup_logger(name="HQPorner API - [Checks]", log_file=None, level=logging.CRITICAL)
 
-    def enable_logging(self, log_file: str = None, level=None, log_ip=None, log_port=None):
+    def enable_logging(self, log_file: str = None, level=None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Checks]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     def check_url(self, url: str):
@@ -71,7 +71,7 @@ class Video:
         self.core = core
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
 
-    def enable_logging(self, log_file: str = None, level=None, log_ip=None, log_port=None):
+    def enable_logging(self, log_file: str = None, level=None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     @property
@@ -237,7 +237,7 @@ class Client:
         self.core.initialize_session(headers) # These headers MUST be applied, otherwise the API will not work!
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=None, level=logging.CRITICAL)
 
-    def enable_logging(self, log_file: str = None, level = None, log_ip=None, log_port=None):
+    def enable_logging(self, log_file: str = None, level = None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
     def get_video(self, url: str) -> Video:
