@@ -200,7 +200,7 @@ class Video:
         script = None
 
         query = title.replace(" ", "+")
-        html_content = self.core.fetch(url=f"{root_url}/?q={query}")
+        html_content = self.core.fetch(url=f"{root_url}?q={query}")
         soup = BeautifulSoup(html_content, features="html.parser")
         divs = soup.find_all('div', class_='row')
 
@@ -218,7 +218,11 @@ class Video:
             urls_ = pattern.findall(script)
 
         except TypeError:
-            raise WeirdError("Error from HQPorner, can't do anything about it.") # Error from HQPorner itself
+            raise WeirdError("""
+I tried searching for the video on HQPorner to receive the thumbnail, but when searching, HQPorner did NOT 
+give the video in the results. This is an issue from HQPorner itself and not my fault. Please do not report this error.
+There's no way to fix it, unless you find an API call to get a thumbnail for a video lol.
+""") # Error from HQPorner itself
 
         main_thumbnail = urls_[0].replace("_1.jpg", "_main.jpg")
         urls.append("https:" + main_thumbnail)
