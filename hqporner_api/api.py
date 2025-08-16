@@ -433,6 +433,4 @@ def main():
 
 
 if __name__ == "__main__":
-    videos = Client().get_brazzers_videos(max_workers=60)
-    for video in videos:
-        print(video.title)
+    main()
