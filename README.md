@@ -34,6 +34,7 @@ client = Client()
 
 # Fetch a video
 video_object = client.get_video("<insert_url_here>")
+# Can also be a mobile URL e.g., https://m.hqporner.com/<video>
 
 # Download the video
 video_object.download(quality="best", path="your_output_path + title.mp4")
