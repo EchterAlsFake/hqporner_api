@@ -448,7 +448,4 @@ def main():
             video.download(quality=args.quality, path=args.output, no_title=no_title)
 
 if __name__ == "__main__":
-    client = Client()
-    search = client.search_videos("anissa kate")
-    for video in search:
-        print(video.title)
+    main()
