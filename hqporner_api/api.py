@@ -9,13 +9,44 @@ from random import choice
 from httpx import Response
 from bs4 import BeautifulSoup
 from functools import cached_property
-from typing import Generator, Optional
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
 from base_api.base import BaseCore, setup_logger
 from base_api.modules.config import RuntimeConfig
+from typing import Generator, Optional, Union, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+
+def _normalize_quality_value(q) -> Union[str, int]:
+    if isinstance(q, int):
+        return q
+    s = str(q).lower().strip()
+    if s in {"best", "half", "worst"}:
+        return s
+    m = re.search(r'(\d{3,4})', s)
+    if m:
+        return int(m.group(1))
+    raise ValueError(f"Invalid quality: {q}")
+
+
+def _choose_quality_from_list(available: List[str | int], target: Union[str, int]):
+    # available like ["240", "360", "480", "720", "1080"]
+    av = sorted({int(x) for x in available})
+    if isinstance(target, str):
+        if target == "best":
+            return av[-1]
+        if target == "worst":
+            return av[0]
+        if target == "half":
+            return av[len(av) // 2]
+        raise ValueError("Invalid label.")
+    # numeric: highest ≤ target, else closest
+    le = [h for h in av if h <= target]
+    if le:
+        return le[-1]
+    # fallback closest (ties -> higher)
+    return min(av, key=lambda h: (abs(h - target), -h))
 
 
 class Checks:
@@ -139,25 +170,26 @@ class Video:
         self.url = Checks().check_url(url)
         self.core = core
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
+        self.is_mobile_fix = False
+
+        self.html_content = self.core.fetch(url=self.url)
+        if isinstance(self.html_content, httpx.Response):
+            self.logger.warning("404 Error! Applying experimental workaround...")
+            self.html_content = self.core.fetch(url=str(self.url).replace("https://hqporner.com", "https://m.hqporner.com"))
+            self.is_mobile_fix = True
 
     def enable_logging(self, log_file: str = None, level=None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
-
-    @property
-    def html_content(self):
-        content = self.core.fetch(url=self.url)
-        if isinstance(content, httpx.Response):
-            self.logger.warning("404 Error! Applying experimental workaround...")
-            content = self.core.fetch(url=str(self.url).replace("https://hqporner.com", "https://m.hqporner.com"))
-
-        return content
 
     @cached_property
     def title(self) -> str:
         """
         :return: (str) The video title (lowercase)
         """
-        return PATTERN_TITLE.search(self.html_content).group(1)
+        if not self.is_mobile_fix:
+            return PATTERN_TITLE.search(self.html_content).group(1)
+
+        return PATTERN_TITLE_ALTERNATE.search(self.html_content).group(1)
 
     @cached_property
     def cdn_url(self) -> str:
@@ -178,21 +210,30 @@ class Video:
         """
         :return: (str) The length of the video in h / m / s format
         """
-        return  PATTERN_VIDEO_LENGTH.search(self.html_content).group(1)
+        if not self.is_mobile_fix:
+            return PATTERN_VIDEO_LENGTH.search(self.html_content).group(1)
+
+        return PATTERN_VIDEO_LENGTH_ALTERNATIVE.findall(self.html_content)[1]
 
     @cached_property
     def publish_date(self) -> str:
         """
         :return: (str) How many months ago the video was uploaded
         """
-        return PATTERN_PUBLISH_DATE.search(self.html_content).group(1)
+        if not self.is_mobile_fix:
+            return PATTERN_PUBLISH_DATE.search(self.html_content).group(1)
+
+        return PATTERN_PUBLISH_DATE_ALTERNATE.search(self.html_content).group(1)
 
     @cached_property
     def tags(self) -> list:
         """
         :return: (list) A list of tags (categories) featured in this video
         """
-        return PATTERN_TAGS.findall(self.html_content)
+        if not self.is_mobile_fix:
+            return PATTERN_TAGS.findall(self.html_content)
+
+        return PATTERN_TAGS_ALTERNATIVE.findall(self.html_content)
 
     @cached_property
     def video_qualities(self) -> list:
@@ -219,37 +260,25 @@ class Video:
         return urls
 
     def download(self, quality, path="./", callback=None, no_title=False):
-        """
-        :param quality:
-        :param path:
-        :param callback:
-        :param no_title:
-        :return: (bool)
-        """
-
         cdn_urls = self.direct_download_urls()
-        quals = self.video_qualities
-        quality_url_map = {qual: url for qual, url in zip(quals, cdn_urls)}
-
-        # Define the quality map
+        quals = self.video_qualities  # e.g., ["360", "480", "720"]
         if not quals:
             raise NotAvailable
 
-        quality_map = {
-            "best": max(quals, key=lambda x: int(x)),
-            "half": sorted(quals, key=lambda x: int(x))[len(quals) // 2],
-            "worst": min(quals, key=lambda x: int(x))
-        }
+        qn = _normalize_quality_value(quality)
+        chosen_height = _choose_quality_from_list(quals, qn)
+
+        # if your `cdn_urls` are ordered 1:1 with `quals` or you have a mapping pattern:
+        # If you already have a quality->url mapping, use it; otherwise build by pattern
+        quality_url_map = {int(re.search(r'(\d{3,4})', q).group(1)): url for q, url in zip(quals, cdn_urls)}
+        download_url = f"https://{quality_url_map[chosen_height]}"
 
         if no_title is False:
             path = os.path.join(path, f"{self.title}.mp4")
 
-        selected_quality = quality_map[quality]
-        download_url = f"https://{quality_url_map[selected_quality]}"
         try:
             self.core.legacy_download(url=download_url, path=path, callback=callback)
             return True
-
         except Exception:
             error = traceback.format_exc()
             self.logger.error(error)
@@ -431,6 +460,7 @@ def main():
         for video in videos:
             video.download(quality=args.quality, path=args.output, no_title=no_title)
 
-
 if __name__ == "__main__":
-    main()
+    client = Client()
+    video = client.get_video("https://hqporner.com/hdporn/122905-you_owe_me_an_orgasm_now_mom.html")
+    print(video.tags)

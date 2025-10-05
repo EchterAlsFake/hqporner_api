@@ -1,11 +1,15 @@
 import re
 
 PATTERN_TITLE = re.compile(r'<h1 class="main-h1" style="line-height: 1em;">\r\n(.*?)</h1>')
+PATTERN_TITLE_ALTERNATE = re.compile(r'style="margin-bottom: 0px;font-size:18px;">(.*?)</h1>')
 PATTERN_CDN_URL = re.compile(r"url: '/blocks/altplayer\.php\?i=//(.*?)',")
 PATTERN_ACTRESS = re.compile(r'/actress/(.*?)"')
 PATTERN_PUBLISH_DATE = re.compile(r'fa-calendar">(.*?)</li>')
+PATTERN_PUBLISH_DATE_ALTERNATE = re.compile(r'meta_data">(.*?)</span>')
 PATTERN_VIDEO_LENGTH = re.compile(r'<li class="icon fa-clock-o">(.*?)</li>')
+PATTERN_VIDEO_LENGTH_ALTERNATIVE = re.compile(r'meta_data">(.*?)</span>')
 PATTERN_TAGS = re.compile(r'class="tag-link click-trigger">(.*?)</a>')
+PATTERN_TAGS_ALTERNATIVE = re.compile(r'fol click-trigger" href="/category/(.*?)"')
 PATTERN_VIDEOS_ON_SITE = re.compile(r'<a href="/hdporn/(.*?)" class="image featured non-overlay atfib n8hu6s" style="margin: 0;">')
 PATTERN_VIDEOS_ON_SITE_ALT = re.compile(r'<a href="/hdporn/(.*?)" class="image featured non-overlay atfib" style="margin: 0;">')
 PATTERN_CANT_FIND = re.compile(r'<p style="padding-bottom: 20px;">(.*?)</p>', re.DOTALL)
