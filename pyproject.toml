@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hqporner_api"
-version = "1.7.8"
+version = "1.7.9"
 description = "A Python API for the Porn Site HQPorner.com"
 readme = "README.md"
 requires-python = ">=3.6"
