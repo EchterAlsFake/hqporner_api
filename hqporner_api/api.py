@@ -6,17 +6,14 @@ import traceback
 
 from enum import Enum
 from random import choice
-from httpx import Response
 from bs4 import BeautifulSoup
 from functools import cached_property
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
-from base_api.base import BaseCore, setup_logger
+from base_api.base import BaseCore, setup_logger, Helper
 from base_api.modules.config import RuntimeConfig
 from typing import Generator, Optional, Union, List
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
 
 def _normalize_quality_value(q) -> Union[str, int]:
     if isinstance(q, int):
@@ -95,17 +92,6 @@ class Checks:
             # I assume that if it's not a URL, the user was smart enough to enter just the name lol
 
 
-class ErrorVideo:
-    """Drop-in-ish stand-in that raises when accessed."""
-    def __init__(self, url: str, err: Exception):
-        self.url = url
-        self._err = err
-
-    def __getattr__(self, _):
-        # Any attribute access surfaces the original error
-        raise self._err
-
-
 class Pagination(Enum):
     QUERY = "query"
     PATH = "path"
@@ -117,49 +103,23 @@ def build_page_url(base_url: str, page: int, *,
     """Erzeugt die Seiten-URL je nach Modus."""
     if page <= 1:
         return base_url
+
     if mode is Pagination.QUERY:
         sep = "&" if "?" in base_url else "?"
         return f"{base_url}{sep}{page_param}={page}"
+
     elif mode is Pagination.PATH:
         return f"{base_url.rstrip('/')}/{page}"
 
 
-class Helper:
-    def __init__(self, core: BaseCore):
-        self.core = core
-        self.url: Optional[str] = None
+def build_page_urls(pagination: Pagination = Pagination.QUERY, base: str = None, pages: int = None,
+                    page_param: str = "p", start_page: int = 1) -> List[str]:
+    page_urls = []
+    base = base.rstrip("/")
+    for i, page in enumerate(range(start_page, start_page + pages), start=0):
+        page_urls.append(build_page_url(base, page, mode=pagination, page_param=page_param))
 
-    def _get_video(self, url: str):
-        return Video(url, core=self.core)
-
-    def _make_video_safe(self, url: str):
-        try:
-            return Video(url, core=self.core)
-        except Exception as e:
-            return ErrorVideo(url, e)
-
-    def iterator(self, pages: int = 0, max_workers: int = 20, base_url: str = None, pagination: Pagination = Pagination.QUERY,
-                 page_param: str = "p", start_page: int = 1):
-        if pages <= 0:
-            return
-
-        base = (base_url or self.url or "").rstrip("/")
-
-        def extract_urls(html: str):
-            return (f"{root_url}hdporn/{m}" for m in PATTERN_VIDEOS_ON_SITE.findall(html))
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            for i, page in enumerate(range(start_page, start_page + pages), start=0):
-                current_url = build_page_url(base, page, mode=pagination, page_param=page_param)
-
-                html_content = self.core.fetch(current_url)
-                if isinstance(html_content, Response) or not html_content:
-                    break
-
-                video_urls = list(extract_urls(html_content))
-                futures = [executor.submit(self._make_video_safe, u) for u in video_urls]
-                for fut in as_completed(futures):
-                    yield fut.result()
+    return page_urls
 
 
 class Video:
@@ -334,9 +294,10 @@ There's no way to fix it, unless you find an API call to get a thumbnail for a v
 
 class Client(Helper):
     def __init__(self, core: Optional[BaseCore] = None):
-        super().__init__(core)
+        super().__init__(core, video=Video)
         self.core = core or BaseCore(config=RuntimeConfig())
-        self.core.initialize_session(headers) # These headers MUST be applied, otherwise the API will not work!
+        self.core.initialize_session()
+        self.core.session.headers.update(headers) # These headers MUST be applied, otherwise the API will not work!
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=None, level=logging.CRITICAL)
 
     def enable_logging(self, log_file: str = None, level = None, log_ip: str = None, log_port: int = None):
@@ -349,46 +310,58 @@ class Client(Helper):
         """
         return Video(url, self.core)
 
-    def get_videos_by_actress(self, name: str, pages: int = 5, max_workers: int = 20) -> Generator[Video, None, None]:
+    def get_videos_by_actress(self, name: str, pages: int = 5,videos_concurrency: int = 5,
+                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
         """
         :param pages: (int) The number of pages to fetch
         :param name: The actress name or the URL
-        :param max_workers: (int) The maximum number of threads to use
+        :param videos_concurrency: (int) How many threads to use to fetch videos
+        :param pages_concurrency: (int) How many threads to use to fetch pages
         :return: Video object
         """
         name = Checks().check_actress(name)
         final_url = f"{root_url_actress}{name}"
-        yield from self.iterator(pages=pages, base_url=final_url, start_page=0, max_workers=max_workers,
-                                 pagination=Pagination.PATH)
+        page_urls = build_page_urls(pagination=Pagination.PATH, base=final_url, pages=pages, start_page=0)
+        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
 
-    def get_videos_by_category(self, category: Category, pages: int = 5, max_workers: int = 20) -> Generator[Video, None, None]:
+    def get_videos_by_category(self, category: Category, pages: int = 5, videos_concurrency: int = 5,
+                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
         """
         :param pages: (int) The number of pages to fetch
         :param category: Category: The video category
-        :param max_workers: (int) The maximum number of threads to use
+        :param videos_concurrency: (int) How many threads to use to fetch videos
+        :param pages_concurrency: (int) How many threads to use to fetch pages
         :return: Video object
         """
-        base_url = f"{root_url_category}{category}"
-        yield from self.iterator(pages=pages, base_url=base_url, start_page=0, max_workers=max_workers,
-                                 pagination=Pagination.PATH)
+        url = f"{root_url_category}{category}"
+        page_urls = build_page_urls(pagination=Pagination.PATH, base=url, pages=pages, start_page=0)
+        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
 
 
-    def search_videos(self, query: str, pages: int = 5, max_workers: int = 20) -> Generator[Video, None, None]:
+    def search_videos(self, query: str, pages: int = 5, videos_concurrency: int = 5,
+                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
         """
         :param query:
         :param pages: (int) How many pages to fetch
-        :param max_workers:
+        :param videos_concurrency: (int) How many threads to use to fetch videos
+        :param pages_concurrency: (int) How many threads to use to fetch pages
         :return: Video object
         """
         query = query.replace(" ", "+")
-        self.url = f"{root_url}?q={query}"
-        yield from self.iterator(pages=pages, max_workers=max_workers, base_url=self.url, start_page=0, pagination=Pagination.QUERY)
+        url = f"{root_url}?q={query}"
+        page_urls = build_page_urls(pagination=Pagination.QUERY, base=url, pages=pages, start_page=0)
+        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
 
-    def get_top_porn(self, sort_by: Sort, pages: int = 5, max_workers: int = 20) -> Generator[Video, None, None]:
+    def get_top_porn(self, sort_by: Sort, pages: int = 5,videos_concurrency: int = 5,
+                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
         """
         :param pages: (int) How many pages to fetch
         :param sort_by: all_time, month, week
-        :param max_workers: (int) The maximum number of threads to use
+        :param videos_concurrency: (int) How many threads to use to fetch videos
+        :param pages_concurrency: (int) How many threads to use to fetch pages
         :return: Video object
         """
         if sort_by == "all_time":
@@ -397,8 +370,9 @@ class Client(Helper):
         else:
             url = f"{root_url_top}{sort_by}"
 
-        yield from self.iterator(pages=pages, base_url=url, start_page=0, pagination=Pagination.PATH,
-                      max_workers=max_workers)
+        page_urls = build_page_urls(base=url, start_page=0, pagination=Pagination.PATH, pages=pages)
+        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
 
     def get_all_categories(self) -> list:
         """
@@ -418,15 +392,18 @@ class Client(Helper):
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}", self.core)
 
-    def get_brazzers_videos(self, pages: int = 5, max_workers: int = 20) -> Generator[Video, None, None]:
+    def get_brazzers_videos(self, pages: int = 5, videos_concurrency: int = 5,
+                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
         """
         :param pages: (int) How many pages to fetch
-        :param max_workers: (int) The maximum number of threads to use
+        :param videos_concurrency: (int) How many threads to use to fetch videos
+        :param pages_concurrency: (int) How many threads to use to fetch pages
         :return: Video object
         """
-        url = root_brazzers
-        yield from self.iterator(pages=pages, base_url=url, start_page=0, pagination=Pagination.PATH,
-                                 max_workers=max_workers)
+        page_urls = build_page_urls(pagination=Pagination.PATH, pages=pages, base=root_brazzers, start_page=0)
+        yield from self.iterator(page_urls=page_urls, extractor=extractor_html, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency)
+
 
 def main():
     parser = argparse.ArgumentParser(description="API Command Line Interface")
@@ -461,6 +438,4 @@ def main():
             video.download(quality=args.quality, path=args.output, no_title=no_title)
 
 if __name__ == "__main__":
-    client = Client()
-    video = client.get_video("https://hqporner.com/hdporn/122905-you_owe_me_an_orgasm_now_mom.html")
-    print(video.tags)
+    main()
