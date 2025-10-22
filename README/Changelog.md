@@ -76,3 +76,8 @@ It will save all network requests that are UTF-8 encoded, e.g., HTML content
 # 1.7.1
 - switched to httpx
 - removed lxml, requests from dependencies
+
+# 1.7.8
+- Fixed 404 errors
+- Support for mobile HQPorner version
+- Support for direct quality picking e.g., "1080" or "720" instead of best, half and so on

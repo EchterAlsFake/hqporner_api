@@ -8,6 +8,7 @@ from enum import Enum
 from random import choice
 from bs4 import BeautifulSoup
 from functools import cached_property
+from hqporner_api.modules.consts import *
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from hqporner_api.modules.functions import *
@@ -56,19 +57,6 @@ class Checks:
 
     def enable_logging(self, log_file: str = None, level=None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Checks]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
-
-    def check_url(self, url: str):
-        """
-        :param url: (str) The URL of the video to check for
-        :return: (str) The URL if the URL is valid, otherwise raises InvalidURL
-        """
-        match = PATTERN_CHECK_URL.match(url)
-        if match:
-            self.logger.debug(f"URL matched {url}")
-            return url
-
-        else:
-            raise InvalidURL
 
     @classmethod
     def check_actress(cls, actress: str):
@@ -127,10 +115,12 @@ class Video:
         """
         :param url: (str) The URL of the video
         """
-        self.url = Checks().check_url(url)
+        self.url = url
         self.core = core
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=None, level=logging.CRITICAL)
         self.is_mobile_fix = False
+        if "m.hqporner" in self.url:
+            self.is_mobile_fix = True
 
         self.html_content = self.core.fetch(url=self.url)
         if isinstance(self.html_content, httpx.Response):
@@ -228,8 +218,6 @@ class Video:
         qn = _normalize_quality_value(quality)
         chosen_height = _choose_quality_from_list(quals, qn)
 
-        # if your `cdn_urls` are ordered 1:1 with `quals` or you have a mapping pattern:
-        # If you already have a quality->url mapping, use it; otherwise build by pattern
         quality_url_map = {int(re.search(r'(\d{3,4})', q).group(1)): url for q, url in zip(quals, cdn_urls)}
         download_url = f"https://{quality_url_map[chosen_height]}"
 
