@@ -297,8 +297,8 @@ class Client(Helper):
         """
         return Video(url, self.core)
 
-    def get_videos_by_actress(self, name: str, pages: int = 5,videos_concurrency: int = 5,
-                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
+    def get_videos_by_actress(self, name: str, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> Generator[Video, None, None]:
         """
         :param pages: (int) The number of pages to fetch
         :param name: The actress name or the URL
@@ -309,11 +309,15 @@ class Client(Helper):
         name = Checks().check_actress(name)
         final_url = f"{root_url_actress}{name}"
         page_urls = build_page_urls(pagination=Pagination.PATH, base=final_url, pages=pages, start_page=0)
+
+        videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
+        pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
+
         yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
                                  pages_concurrency=pages_concurrency, extractor=extractor_html)
 
-    def get_videos_by_category(self, category: Category, pages: int = 5, videos_concurrency: int = 5,
-                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
+    def get_videos_by_category(self, category: Category, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> Generator[Video, None, None]:
         """
         :param pages: (int) The number of pages to fetch
         :param category: Category: The video category
@@ -323,12 +327,14 @@ class Client(Helper):
         """
         url = f"{root_url_category}{category}"
         page_urls = build_page_urls(pagination=Pagination.PATH, base=url, pages=pages, start_page=0)
+        videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
+        pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
         yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
                                  pages_concurrency=pages_concurrency, extractor=extractor_html)
 
 
-    def search_videos(self, query: str, pages: int = 5, videos_concurrency: int = 5,
-                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
+    def search_videos(self, query: str, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> Generator[Video, None, None]:
         """
         :param query:
         :param pages: (int) How many pages to fetch
@@ -339,11 +345,13 @@ class Client(Helper):
         query = query.replace(" ", "+")
         url = f"{root_url}?q={query}"
         page_urls = build_page_urls(pagination=Pagination.QUERY, base=url, pages=pages, start_page=0)
+        videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
+        pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
         yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
                                  pages_concurrency=pages_concurrency, extractor=extractor_html)
 
-    def get_top_porn(self, sort_by: Sort, pages: int = 5,videos_concurrency: int = 5,
-                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
+    def get_top_porn(self, sort_by: Sort, pages: int = 5,videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> Generator[Video, None, None]:
         """
         :param pages: (int) How many pages to fetch
         :param sort_by: all_time, month, week
@@ -358,6 +366,8 @@ class Client(Helper):
             url = f"{root_url_top}{sort_by}"
 
         page_urls = build_page_urls(base=url, start_page=0, pagination=Pagination.PATH, pages=pages)
+        videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
+        pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
         yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
                                  pages_concurrency=pages_concurrency, extractor=extractor_html)
 
@@ -379,8 +389,8 @@ class Client(Helper):
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}", self.core)
 
-    def get_brazzers_videos(self, pages: int = 5, videos_concurrency: int = 5,
-                            pages_concurrency: int = 2) -> Generator[Video, None, None]:
+    def get_brazzers_videos(self, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> Generator[Video, None, None]:
         """
         :param pages: (int) How many pages to fetch
         :param videos_concurrency: (int) How many threads to use to fetch videos
@@ -388,6 +398,8 @@ class Client(Helper):
         :return: Video object
         """
         page_urls = build_page_urls(pagination=Pagination.PATH, pages=pages, base=root_brazzers, start_page=0)
+        videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
+        pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
         yield from self.iterator(page_urls=page_urls, extractor=extractor_html, videos_concurrency=videos_concurrency,
                                  pages_concurrency=pages_concurrency)
 
