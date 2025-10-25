@@ -33,4 +33,5 @@ headers = {
 }
 
 def extractor_html(content: str):
-    return (f"{root_url}hdporn/{m}" for m in PATTERN_VIDEOS_ON_SITE.findall(content))
+    video_urls = [f"{root_url}hdporn/{m}" for m in PATTERN_VIDEOS_ON_SITE.findall(content)]
+    return video_urls

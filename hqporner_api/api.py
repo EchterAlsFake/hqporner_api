@@ -344,7 +344,7 @@ class Client(Helper):
         """
         query = query.replace(" ", "+")
         url = f"{root_url}?q={query}"
-        page_urls = build_page_urls(pagination=Pagination.QUERY, base=url, pages=pages, start_page=0)
+        page_urls = build_page_urls(pagination=Pagination.QUERY, base=url, pages=pages, start_page=1)
         videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
         pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
         yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
