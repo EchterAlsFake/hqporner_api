@@ -3,7 +3,7 @@
 <div align="center">
     <a href="https://pepy.tech/project/hqporner_api"><img src="https://static.pepy.tech/badge/hqporner_api" alt="Downloads"></a>
     <a href="https://github.com/EchterAlsFake/hqporner_api/workflows/"><img src="https://github.com/EchterAlsFake/hqporner_api/workflows/CodeQL/badge.svg" alt="CodeQL Analysis"/></a>
-    <a href="https://echteralsfake.duckdns.org/ci/hqporner_api/badge.svg"><img src="https://echteralsfake.duckdns.org/ci/hqporner_api/badge.svg" alt="API Tests"/></a>
+    <a href="https://echteralsfake.me/ci/hqporner_api/badge.svg"><img src="https://echteralsfake.me/ci/hqporner_api/badge.svg" alt="API Tests"/></a>
 </div>
 
 
