@@ -7,17 +7,35 @@
 </div>
 
 
-# Description
-
-HQPorner API is an API for HQPorner. It allows you to fetch information from videos using regexes and requests.
-
 # Disclaimer
+> [!IMPORTANT]
+> This is an unofficial and unaffiliated project. Please read the full disclaimer before use:
+> **[DISCLAIMER.md](https://github.com/EchterAlsFake/API_Docs/blob/master/Disclaimer.md)**
+>
+> By using this project you agree to comply with the target site’s rules, copyright/licensing requirements,
+> and applicable laws. Do not use it to bypass access controls or scrape at disruptive rates.
 
-> [!IMPORTANT] 
-> HQPorner API is in violation to HQporner's ToS!
-> If you are the website owner of hqporner.com, contact me at my E-Mail, and I'll take this repository immediately offline.
-> EchterAlsFake@proton.me
+# Features
+- Fetch videos + metadata
+- Download videos
+- Fetch Pornstars
+- Search for videos
+- Get videos by category
+- Other site specific features 
+- Built-in caching
+- Easy interface
+- Great type hinting
+- Proxy support
+- Very customizable
 
+# Supported Platforms
+This API has been tested and confirmed working on:
+
+- Windows 11 (x64) 
+- macOS Sequoia (x86_64)
+- Linux (Arch) (x86_64)
+- Android 16 (aarch64)
+  
 # Quickstart
 
 ### Have a look at the [Documentation](https://github.com/EchterAlsFake/API_Docs/blob/master/Porn_APIs/HQPorner.md) for more details
@@ -75,4 +93,4 @@ Pull requests are welcome :)
 
 # License
 Licensed under the LGPLv3 License
-<br>Copyright (C) 2023–2025 Johannes Habel
+<br>Copyright (C) 2023–2026 Johannes Habel
