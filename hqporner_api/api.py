@@ -11,39 +11,17 @@ from functools import cached_property
 from hqporner_api.modules.consts import *
 from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
-from base_api.base import BaseCore, setup_logger, Helper
+from base_api.base import BaseCore, setup_logger, Helper, _choose_quality_from_list, _normalize_quality_value
 from base_api.modules.config import RuntimeConfig
-from typing import Generator, Optional, Union, List
-
-def _normalize_quality_value(q) -> Union[str, int]:
-    if isinstance(q, int):
-        return q
-    s = str(q).lower().strip()
-    if s in {"best", "half", "worst"}:
-        return s
-    m = re.search(r'(\d{3,4})', s)
-    if m:
-        return int(m.group(1))
-    raise ValueError(f"Invalid quality: {q}")
+from typing import Generator, Optional, List
 
 
-def _choose_quality_from_list(available: List[str | int], target: Union[str, int]):
-    # available like ["240", "360", "480", "720", "1080"]
-    av = sorted({int(x) for x in available})
-    if isinstance(target, str):
-        if target == "best":
-            return av[-1]
-        if target == "worst":
-            return av[0]
-        if target == "half":
-            return av[len(av) // 2]
-        raise ValueError("Invalid label.")
-    # numeric: highest ≤ target, else closest
-    le = [h for h in av if h <= target]
-    if le:
-        return le[-1]
-    # fallback closest (ties -> higher)
-    return min(av, key=lambda h: (abs(h - target), -h))
+try:
+    import lxml
+    parser = "lxml"
+
+except (ModuleNotFoundError, ImportError):
+    parser = "html.parser"
 
 
 class Checks:
@@ -245,7 +223,7 @@ class Video:
 
         query = title.replace(" ", "+")
         html_content = self.core.fetch(url=f"{root_url}?q={query}")
-        soup = BeautifulSoup(html_content, features="html.parser")
+        soup = BeautifulSoup(html_content, parser)
         divs = soup.find_all('div', class_='row')
 
         for div in divs:
