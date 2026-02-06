@@ -2,6 +2,7 @@ import os
 import httpx
 import logging
 import argparse
+import threading
 import traceback
 
 from enum import Enum
@@ -186,7 +187,7 @@ class Video:
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
-    def download(self, quality, path="./", callback=None, no_title=False):
+    def download(self, quality, path="./", callback=None, no_title=False, stop_event: threading.Event = None):
         cdn_urls = self.direct_download_urls()
         quals = self.video_qualities  # e.g., ["360", "480", "720"]
         if not quals:
@@ -202,7 +203,7 @@ class Video:
             path = os.path.join(path, f"{self.title}.mp4")
 
         try:
-            self.core.legacy_download(url=download_url, path=path, callback=callback)
+            self.core.legacy_download(url=download_url, path=path, callback=callback, stop_event=stop_event)
             return True
         except Exception:
             error = traceback.format_exc()

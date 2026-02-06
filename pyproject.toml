@@ -15,7 +15,7 @@ authors = [
 ]
 dependencies = [
     "bs4",
-    "eaf_base_api",
+    "eaf_base_api@git+https://github.com/EchterAlsFake/eaf_base_api",
 ]
 classifiers = [
     "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
