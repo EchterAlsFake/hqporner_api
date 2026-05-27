@@ -1,69 +1,89 @@
-from hqporner_api.api import Client, Sort
+import pytest
+from hqporner_api.api import Sort
 
-client = Client()
 
-
-def test_get_top_porn_all_time():
+@pytest.mark.asyncio
+async def test_get_top_porn_all_time(client):
     top_porn_all = client.get_top_porn(sort_by=Sort.ALL_TIME)
 
-    for idx, video in enumerate(top_porn_all):
+    idx = 0
+    async for video in top_porn_all:
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:
             break
+        idx += 1
 
-def test_get_top_porn_week():
+@pytest.mark.asyncio
+async def test_get_top_porn_week(client):
     top_porn_week = client.get_top_porn(sort_by=Sort.WEEK)
 
-    for idx, video in enumerate(top_porn_week):
+    idx = 0
+    async for video in top_porn_week:
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:
             break
+        idx += 1
 
 
-def test_get_top_porn_month():
+@pytest.mark.asyncio
+async def test_get_top_porn_month(client):
     top_porn_month = client.get_top_porn(sort_by=Sort.MONTH)
 
-    for idx, video in enumerate(top_porn_month):
+    idx = 0
+    async for video in top_porn_month:
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:
             break
+        idx += 1
 
 
-def test_get_all_categories():
-    all_categories = client.get_all_categories()
+@pytest.mark.asyncio
+async def test_get_all_categories(client):
+    all_categories = await client.get_all_categories()
     assert isinstance(all_categories, list) and len(all_categories) > 20
 
 
-def test_random_video():
-    random_video = client.get_random_video()
+@pytest.mark.asyncio
+async def test_random_video(client):
+    random_video = await client.get_random_video()
+    await random_video.init()
     assert isinstance(random_video.title, str) and len(random_video.title) > 0
 
 
-def test_get_videos_by_category():
+@pytest.mark.asyncio
+async def test_get_videos_by_category(client):
     #  This will test ALL categories
 
-    categories = client.get_all_categories()
+    categories = await client.get_all_categories()
     for idx, category in enumerate(categories):
         videos = client.get_videos_by_category(category=category)
-        for idx, video in enumerate(videos):
+        inner_idx = 0
+        async for video in videos:
             assert isinstance(video.title, str) and len(video.title) > 0
-            if idx == 1:
+            if inner_idx == 1:
                 break
+            inner_idx += 1
 
 
-def test_get_videos_by_actress():
+@pytest.mark.asyncio
+async def test_get_videos_by_actress(client):
     name = "anissa-kate"
 
     actress = client.get_videos_by_actress(name)
-    for idx, video in enumerate(actress):
+    idx = 0
+    async for video in actress:
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:
             break
+        idx += 1
 
 
-def test_get_brazzers_videos():
+@pytest.mark.asyncio
+async def test_get_brazzers_videos(client):
     videos = client.get_brazzers_videos()
-    for idx, video in enumerate(videos):
+    idx = 0
+    async for video in videos:
         assert isinstance(video.title, str) and len(video.title) > 0
         if idx == 3:
             break
+        idx += 1

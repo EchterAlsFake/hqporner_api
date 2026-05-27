@@ -1,5 +1,5 @@
 import os
-import httpx
+import asyncio
 import logging
 import argparse
 import threading
@@ -14,7 +14,9 @@ from hqporner_api.modules.errors import *
 from hqporner_api.modules.locals import *
 from base_api.base import BaseCore, setup_logger, Helper, _choose_quality_from_list, _normalize_quality_value
 from base_api.modules.config import RuntimeConfig
-from typing import Generator, Optional, List
+from typing import Optional, List, Union, AsyncGenerator
+
+from curl_cffi.requests import Response
 
 
 try:
@@ -66,7 +68,6 @@ class Pagination(Enum):
 def build_page_url(base_url: str, page: int, *,
                    mode: Pagination,
                    page_param: str = "p") -> str:
-    """Erzeugt die Seiten-URL je nach Modus."""
     if page <= 1:
         return base_url
 
@@ -89,7 +90,7 @@ def build_page_urls(pagination: Pagination = Pagination.QUERY, base: str = None,
 
 
 class Video:
-    def __init__(self, url, core):
+    def __init__(self, url, core, html_content=None):
         """
         :param url: (str) The URL of the video
         """
@@ -100,14 +101,30 @@ class Video:
         if "m.hqporner" in self.url:
             self.is_mobile_fix = True
 
-        self.html_content = self.core.fetch(url=self.url)
-        if isinstance(self.html_content, httpx.Response):
-            self.logger.warning("404 Error! Applying experimental workaround...")
-            self.html_content = self.core.fetch(url=str(self.url).replace("https://hqporner.com", "https://m.hqporner.com"))
-            self.is_mobile_fix = True
+        self.html_content = html_content
+
+        if self.html_content:
+            self.soup = BeautifulSoup(self.html_content, parser)
 
     def enable_logging(self, log_file: str = None, level=None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Video]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
+
+    async def init(self):
+        if not self.html_content:
+            self.html_content = await self.get_html_content()
+
+            if isinstance(self.html_content, Response):
+                self.logger.warning("404 Error! Applying experimental workaround...")
+                self.html_content = await self.core.fetch(
+                    url=str(self.url).replace("https://hqporner.com", "https://m.hqporner.com"))
+                self.is_mobile_fix = True
+
+            self.soup = BeautifulSoup(self.html_content, parser)
+
+        return self
+
+    async def get_html_content(self) -> Union[str, Response]:
+        return await self.core.fetch(self.url)
 
     @cached_property
     def title(self) -> str:
@@ -164,11 +181,11 @@ class Video:
         return PATTERN_TAGS_ALTERNATIVE.findall(self.html_content)
 
     @cached_property
-    def video_qualities(self) -> list:
+    async def video_qualities(self) -> list:
         """
         :return: (list) The available qualities of the video
         """
-        quals = self.direct_download_urls()
+        quals = await self.direct_download_urls()
         qualities = set()  # Using a set to avoid duplicates
 
         for url in quals:
@@ -178,18 +195,18 @@ class Video:
 
         return sorted(qualities, key=int)  # Sorting to maintain a consistent order
 
-    def direct_download_urls(self) -> list:
+    async def direct_download_urls(self) -> list:
         """
         :return: (list) The direct download urls for all available qualities
         """
         cdn_url = f"https://{self.cdn_url}"
-        html_content = self.core.fetch(cdn_url)
+        html_content = await self.core.fetch(cdn_url)
         urls = PATTERN_EXTRACT_CDN_URLS.findall(html_content)
         return urls
 
-    def download(self, quality, path="./", callback=None, no_title=False, stop_event: threading.Event = None):
-        cdn_urls = self.direct_download_urls()
-        quals = self.video_qualities  # e.g., ["360", "480", "720"]
+    async def download(self, quality, path="./", callback=None, no_title=False, stop_event: threading.Event = None):
+        cdn_urls = await self.direct_download_urls()
+        quals = await self.video_qualities  # e.g., ["360", "480", "720"]
         if not quals:
             raise NotAvailable
 
@@ -203,14 +220,14 @@ class Video:
             path = os.path.join(path, f"{self.title}.mp4")
 
         try:
-            self.core.legacy_download(url=download_url, path=path, callback=callback, stop_event=stop_event)
+            await self.core.legacy_download(url=download_url, path=path, callback=callback, stop_event=stop_event)
             return True
         except Exception:
             error = traceback.format_exc()
             self.logger.error(error)
             return False
 
-    def get_thumbnails(self) -> list:
+    async def get_thumbnails(self) -> list:
         """
         :return: (list) First item = Thumbnail, others = Preview
         """
@@ -223,7 +240,7 @@ class Video:
         script = None
 
         query = title.replace(" ", "+")
-        html_content = self.core.fetch(url=f"{root_url}?q={query}")
+        html_content = await self.core.fetch(url=f"{root_url}?q={query}")
         soup = BeautifulSoup(html_content, parser)
         divs = soup.find_all('div', class_='row')
 
@@ -276,8 +293,8 @@ class Client(Helper):
         """
         return Video(url, self.core)
 
-    def get_videos_by_actress(self, name: str, pages: int = 5, videos_concurrency: int = None,
-                            pages_concurrency: int = None) -> Generator[Video, None, None]:
+    async def get_videos_by_actress(self, name: str, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> AsyncGenerator[Video, None]:
         """
         :param pages: (int) The number of pages to fetch
         :param name: The actress name or the URL
@@ -292,11 +309,12 @@ class Client(Helper):
         videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
         pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
 
-        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
-                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
+        async for video in self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html):
+            yield await video.init()
 
-    def get_videos_by_category(self, category: Category, pages: int = 5, videos_concurrency: int = None,
-                            pages_concurrency: int = None) -> Generator[Video, None, None]:
+    async def get_videos_by_category(self, category: Category, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> AsyncGenerator[Video, None]:
         """
         :param pages: (int) The number of pages to fetch
         :param category: Category: The video category
@@ -308,12 +326,13 @@ class Client(Helper):
         page_urls = build_page_urls(pagination=Pagination.PATH, base=url, pages=pages, start_page=0)
         videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
         pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
-        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
-                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
+        async for video in self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html):
+            yield await video.init()
 
 
-    def search_videos(self, query: str, pages: int = 5, videos_concurrency: int = None,
-                            pages_concurrency: int = None) -> Generator[Video, None, None]:
+    async def search_videos(self, query: str, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> AsyncGenerator[Video, None]:
         """
         :param query:
         :param pages: (int) How many pages to fetch
@@ -326,11 +345,12 @@ class Client(Helper):
         page_urls = build_page_urls(pagination=Pagination.QUERY, base=url, pages=pages, start_page=1)
         videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
         pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
-        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
-                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
+        async for video in self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html):
+            yield await video.init()
 
-    def get_top_porn(self, sort_by: Sort, pages: int = 5,videos_concurrency: int = None,
-                            pages_concurrency: int = None) -> Generator[Video, None, None]:
+    async def get_top_porn(self, sort_by: Sort, pages: int = 5,videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> AsyncGenerator[Video, None]:
         """
         :param pages: (int) How many pages to fetch
         :param sort_by: all_time, month, week
@@ -347,29 +367,30 @@ class Client(Helper):
         page_urls = build_page_urls(base=url, start_page=0, pagination=Pagination.PATH, pages=pages)
         videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
         pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
-        yield from self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
-                                 pages_concurrency=pages_concurrency, extractor=extractor_html)
+        async for video in self.iterator(page_urls=page_urls, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency, extractor=extractor_html):
+            yield await video.init()
 
-    def get_all_categories(self) -> list:
+    async def get_all_categories(self) -> list:
         """
         :return: (list) Returns all categories of HQporner as a list of strings
         """
-        html_content = self.core.fetch("https://hqporner.com/categories")
+        html_content = await self.core.fetch("https://hqporner.com/categories")
         categories = PATTERN_ALL_CATEGORIES.findall(html_content)
         return categories
 
-    def get_random_video(self) -> Video:
+    async def get_random_video(self) -> Video:
         """
         :return: Video object (random video from HQPorner)
         """
-        html_content = self.core.fetch(root_random)
+        html_content = await self.core.fetch(root_random)
         videos = PATTERN_VIDEOS_ON_SITE_ALT.findall(html_content)
         self.logger.info(f"Got {len(videos)} videos from HQPorner")
         video = choice(videos) # The random-porn from HQPorner returns 3 videos, so we pick one of them
         return Video(f"{root_url}hdporn/{video}", self.core)
 
-    def get_brazzers_videos(self, pages: int = 5, videos_concurrency: int = None,
-                            pages_concurrency: int = None) -> Generator[Video, None, None]:
+    async def get_brazzers_videos(self, pages: int = 5, videos_concurrency: int = None,
+                            pages_concurrency: int = None) -> AsyncGenerator[Video, None]:
         """
         :param pages: (int) How many pages to fetch
         :param videos_concurrency: (int) How many threads to use to fetch videos
@@ -379,11 +400,12 @@ class Client(Helper):
         page_urls = build_page_urls(pagination=Pagination.PATH, pages=pages, base=root_brazzers, start_page=0)
         videos_concurrency = videos_concurrency or self.core.config.videos_concurrency
         pages_concurrency = pages_concurrency or self.core.config.pages_concurrency
-        yield from self.iterator(page_urls=page_urls, extractor=extractor_html, videos_concurrency=videos_concurrency,
-                                 pages_concurrency=pages_concurrency)
+        async for video in self.iterator(page_urls=page_urls, extractor=extractor_html, videos_concurrency=videos_concurrency,
+                                 pages_concurrency=pages_concurrency):
+            yield await video.init()
 
 
-def main():
+async def main():
     parser = argparse.ArgumentParser(description="API Command Line Interface")
     parser.add_argument("--download", metavar="URL (str)", type=str, help="URL to download from")
     parser.add_argument("--quality", metavar="best,half,worst", type=str, help="The video quality (best,half,worst)",
@@ -400,7 +422,8 @@ def main():
     if args.download:
         client = Client()
         video = client.get_video(args.download)
-        video.download(quality=args.quality, path=args.output, no_title=no_title)
+        await video.init()
+        await video.download(quality=args.quality, path=args.output, no_title=no_title)
 
     if args.file:
         videos = []
@@ -413,7 +436,8 @@ def main():
             videos.append(client.get_video(url))
 
         for video in videos:
-            video.download(quality=args.quality, path=args.output, no_title=no_title)
+            await video.init()
+            await video.download(quality=args.quality, path=args.output, no_title=no_title)
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

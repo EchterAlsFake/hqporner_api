@@ -1,11 +1,10 @@
-from ..api import Client
+import pytest
 
-client = Client()
 query = "Mia Khalifa"
 
-
-def test_basic_search():
+@pytest.mark.asyncio
+async def test_basic_search(client):
     videos = client.search_videos(query)
 
-    for video in videos:
+    async for video in videos:
         assert isinstance(video.title, str) and len(video.title) > 0
