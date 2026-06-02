@@ -286,12 +286,12 @@ class Client(Helper):
     def enable_logging(self, log_file: str = None, level = None, log_ip: str = None, log_port: int = None):
         self.logger = setup_logger(name="HQPorner API - [Client]", log_file=log_file, level=level, http_ip=log_ip, http_port=log_port)
 
-    def get_video(self, url: str) -> Video:
+    async def get_video(self, url: str) -> Video:
         """
         :param url: The video URL
         :return: Video object
         """
-        return Video(url, self.core)
+        return await Video(url, self.core).init()
 
     async def get_videos_by_actress(self, name: str, pages: int = 5, videos_concurrency: int = None,
                             pages_concurrency: int = None) -> AsyncGenerator[Video, None]:
@@ -421,8 +421,7 @@ async def main():
     no_title = args.no_title
     if args.download:
         client = Client()
-        video = client.get_video(args.download)
-        await video.init()
+        video = await client.get_video(args.download)
         await video.download(quality=args.quality, path=args.output, no_title=no_title)
 
     if args.file:
