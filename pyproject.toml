@@ -4,10 +4,10 @@ build-backend = "uv_build"
 
 [project]
 name = "hqporner_api"
-version = "2.0"
+version = "2.1"
 description = "A Python API for the Porn Site HQPorner.com"
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "LGPL-3.0-only"
 license-files = ["LICENSE"]
 authors = [
@@ -23,7 +23,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-full = ["lxml", "httpx[http2]", "httpx[socks]"] # H2 for HTTP 2.0 support, LXML for faster parsing speed, though optional :)
+full = ["lxml"] # H2 for HTTP 2.0 support, LXML for faster parsing speed, though optional :)
 
 
 [project.urls]
@@ -38,6 +38,7 @@ packages = { find = {} }
 [tool.uv.build-backend]
 module-name = "hqporner_api"
 module-root = ""
+
 [tool.pytest.ini_options]
 asyncio_default_test_loop_scope = "session"
 asyncio_default_fixture_loop_scope = "session"
