@@ -32,8 +32,3 @@ async def test_direct_download_url(video):
     urls = await video.direct_download_urls()
     assert isinstance(urls, list) and len(urls) > 0
 
-
-@pytest.mark.asyncio
-async def test_thumbnails(video):
-    thumbnails = await video.get_thumbnails()
-    assert isinstance(thumbnails, list) and len(thumbnails) == 11

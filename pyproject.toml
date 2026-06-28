@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "hqporner_api"
-version = "2.1.1"
+version = "2.2"
 description = "A Python API for the Porn Site HQPorner.com"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.12"
@@ -14,17 +14,13 @@ authors = [
     { name = "Johannes Habel", email = "EchterAlsFake@proton.me" }
 ]
 dependencies = [
-    "bs4",
-    "eaf_base_api",
+    "selectolax",
+    "eaf-base-api",
 ]
 classifiers = [
     "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     "Programming Language :: Python",
 ]
-
-[project.optional-dependencies]
-full = ["lxml"] # H2 for HTTP 2.0 support, LXML for faster parsing speed, though optional :)
-
 
 [project.urls]
 Homepage = "https://github.com/EchterAlsFake/hqporner_api"

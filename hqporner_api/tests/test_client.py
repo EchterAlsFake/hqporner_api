@@ -7,8 +7,8 @@ async def test_get_top_porn_all_time(client):
     top_porn_all = client.get_top_porn(sort_by=Sort.ALL_TIME)
 
     idx = 0
-    async for video in top_porn_all:
-        assert isinstance(video.title, str) and len(video.title) > 0
+    async for scrape_result in top_porn_all:
+        assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
         if idx == 3:
             break
         idx += 1
@@ -18,8 +18,8 @@ async def test_get_top_porn_week(client):
     top_porn_week = client.get_top_porn(sort_by=Sort.WEEK)
 
     idx = 0
-    async for video in top_porn_week:
-        assert isinstance(video.title, str) and len(video.title) > 0
+    async for scrape_result in top_porn_week:
+        assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
         if idx == 3:
             break
         idx += 1
@@ -30,8 +30,8 @@ async def test_get_top_porn_month(client):
     top_porn_month = client.get_top_porn(sort_by=Sort.MONTH)
 
     idx = 0
-    async for video in top_porn_month:
-        assert isinstance(video.title, str) and len(video.title) > 0
+    async for scrape_result in top_porn_month:
+        assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
         if idx == 3:
             break
         idx += 1
@@ -46,7 +46,6 @@ async def test_get_all_categories(client):
 @pytest.mark.asyncio
 async def test_random_video(client):
     random_video = await client.get_random_video()
-    await random_video.init()
     assert isinstance(random_video.title, str) and len(random_video.title) > 0
 
 
@@ -58,8 +57,8 @@ async def test_get_videos_by_category(client):
     for idx, category in enumerate(categories):
         videos = client.get_videos_by_category(category=category)
         inner_idx = 0
-        async for video in videos:
-            assert isinstance(video.title, str) and len(video.title) > 0
+        async for scrape_result in videos:
+            assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
             if inner_idx == 1:
                 break
             inner_idx += 1
@@ -71,8 +70,8 @@ async def test_get_videos_by_actress(client):
 
     actress = client.get_videos_by_actress(name)
     idx = 0
-    async for video in actress:
-        assert isinstance(video.title, str) and len(video.title) > 0
+    async for scrape_result in actress:
+        assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
         if idx == 3:
             break
         idx += 1
@@ -82,8 +81,8 @@ async def test_get_videos_by_actress(client):
 async def test_get_brazzers_videos(client):
     videos = client.get_brazzers_videos()
     idx = 0
-    async for video in videos:
-        assert isinstance(video.title, str) and len(video.title) > 0
+    async for scrape_result in videos:
+        assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
         if idx == 3:
             break
         idx += 1

@@ -6,5 +6,5 @@ query = "Mia Khalifa"
 async def test_basic_search(client):
     videos = client.search_videos(query)
 
-    async for video in videos:
-        assert isinstance(video.title, str) and len(video.title) > 0
+    async for scrape_result in videos:
+        assert isinstance(scrape_result.video.title, str) and len(scrape_result.video.title) > 0
