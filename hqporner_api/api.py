@@ -397,7 +397,7 @@ class Client(Helper):
                                  keep_original_order=keep_original_order):
             yield scrape_result
 
-    async def get_videos_by_category(self, category: Category, pages: int = 5, videos_concurrency: int | None = None,
+    async def get_videos_by_category(self, category: Category | str, pages: int = 5, videos_concurrency: int | None = None,
                             pages_concurrency: int | None = None,
                                      on_video_error: on_error_hint = on_error,
                                      on_page_error: on_error_hint = None,
@@ -426,11 +426,9 @@ class Client(Helper):
 
 
     async def search_videos(self, query: str, pages: int = 5, videos_concurrency: int | None = None,
-                            pages_concurrency: int | None = None,
-                            on_video_error: on_error_hint = on_error,
+                            pages_concurrency: int | None = None, on_video_error: on_error_hint = on_error,
                             on_page_error: on_error_hint = None,
-                            keep_original_order: bool = False
-                            ) -> AsyncGenerator[ScrapeResult, None]:
+                            keep_original_order: bool = False) -> AsyncGenerator[ScrapeResult, None]:
         """
         :param query:
         :param pages: (int) How many pages to fetch
@@ -453,12 +451,10 @@ class Client(Helper):
                                  keep_original_order=keep_original_order):
             yield scrape_result
 
-    async def get_top_porn(self, sort_by: Sort, pages: int = 5,videos_concurrency: int | None = None,
-                            pages_concurrency: int | None = None,
-                           on_video_error: on_error_hint = on_error,
+    async def get_top_porn(self, sort_by: Sort | str, pages: int = 5,videos_concurrency: int | None = None,
+                           pages_concurrency: int | None = None, on_video_error: on_error_hint = on_error,
                            on_page_error: on_error_hint = None,
-                           keep_original_order: bool = False,
-                           ) -> AsyncGenerator[ScrapeResult, None]:
+                           keep_original_order: bool = False) -> AsyncGenerator[ScrapeResult, None]:
         """
         :param pages: (int) How many pages to fetch
         :param sort_by: all_time, month, week
@@ -481,8 +477,8 @@ class Client(Helper):
         assert videos_concurrency and pages_concurrency
         async for scrape_result in self.iterator(target_page_urls=page_urls, max_video_concurrency=videos_concurrency,
                                  max_page_concurrency=pages_concurrency, video_link_extractor=extractor_html,
-                                         on_video_error=on_video_error, on_page_error=on_page_error,
-                                         keep_original_order=keep_original_order):
+                                 on_video_error=on_video_error, on_page_error=on_page_error,
+                                 keep_original_order=keep_original_order):
             yield scrape_result
 
     async def get_all_categories(self) -> list[str]:
@@ -507,11 +503,9 @@ class Client(Helper):
         return await VideoBuilder(f"{video}", self.core).init()
 
     async def get_brazzers_videos(self, pages: int = 5, videos_concurrency: int | None = None,
-                            pages_concurrency: int | None = None,
-                                  on_video_error: on_error_hint = on_error,
-                                  on_page_error: on_error_hint = None,
-                                  keep_original_order: bool = False
-                                  ) -> AsyncGenerator[ScrapeResult, None]:
+                            pages_concurrency: int | None = None, on_video_error: on_error_hint = on_error,
+                            on_page_error: on_error_hint = None,
+                            keep_original_order: bool = False) -> AsyncGenerator[ScrapeResult, None]:
         """
         :param pages: (int) How many pages to fetch
         :param videos_concurrency: (int) How many threads to use to fetch videos

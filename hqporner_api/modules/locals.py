@@ -1,15 +1,15 @@
 """
 Some objects you can use for the HQPorner API.
 """
+from enum import StrEnum
 
-
-class Sort:
+class Sort(StrEnum):
     ALL_TIME = "all-time"
     WEEK = "week"
     MONTH = "month"
 
 
-class Category:
+class Category(StrEnum):
     QUALITY_HD = "1080p-porn"
     ANAL = "anal-sex-hd"
     QUALITY_4K = "4k-porn"

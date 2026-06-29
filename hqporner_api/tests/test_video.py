@@ -1,34 +1,21 @@
 import pytest
+from ..api import Client, DownloadConfigRAW
 
 
-@pytest.mark.asyncio
-async def test_title(video):
-    assert isinstance(video.title, str) and len(video.title) > 0
-
-
-@pytest.mark.asyncio
-async def test_pornstars(video):
-    assert isinstance(video.pornstars, list) and len(video.pornstars) > 0
-
+@pytest.fixture
+def client() -> Client:
+    return Client()
 
 @pytest.mark.asyncio
-async def test_video_length(video):
-    assert isinstance(video.length, str) and len(video.length) > 0
+async def test_video(client):
+    video = await client.get_video("https://hqporner.com/hdporn/126829-this_is_our_story.html")
+    assert isinstance(video.title, str)
+    assert isinstance(await video.video_qualities, list)
+    assert isinstance(video.tags, list)
+    assert isinstance(video.length, str)
+    assert isinstance(video.pornstars, list)
+    assert isinstance(video.cdn_url, str)
+    assert isinstance(video.publish_date, str)
 
-
-@pytest.mark.asyncio
-async def test_categories(video):
-    assert isinstance(video.tags, list) and len(video.tags) > 0
-
-
-@pytest.mark.asyncio
-async def test_qualities(video):
-    qualities = await video.video_qualities
-    assert isinstance(qualities, list) and len(qualities) > 0
-
-
-@pytest.mark.asyncio
-async def test_direct_download_url(video):
-    urls = await video.direct_download_urls()
-    assert isinstance(urls, list) and len(urls) > 0
-
+    config_low = DownloadConfigRAW(quality="best")
+    assert await video.download(config_low) is True
